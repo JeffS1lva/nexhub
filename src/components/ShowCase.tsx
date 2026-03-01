@@ -1,412 +1,641 @@
 "use client";
 
-import React from "react";
-import { useEffect, useRef, useState } from "react";
-import { cn } from "@/lib/utils";
-import { BlurFade } from "./ui/blur-fade";
-import { Marquee } from "./ui/marquee";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 const projects = [
   {
-    title: "E-Commerce Premium",
-    category: "Loja Virtual",
-    description:
-      "Plataforma completa de vendas online com checkout otimizado e painel administrativo.",
-    image:
-      "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=1200&q=80",
-    tags: ["React", "Next.js", "Stripe"],
+    title: "Analytics Pro",
+    category: "SaaS Dashboard",
+    client: "TechFlow Solutions",
+    description: "Dashboard analítico enterprise com visualização de dados em tempo real, gráficos interativos e relatórios automatizados.",
+    image: "https://cdn.dribbble.com/userupload/3998167/file/original-c52969b26fc071b11dcac7b2bd399bfa.png?format=webp&resize=2400x1600",
+    demoUrl: "https://analytics-dashboard-demo.vercel.app",
+    tags: ["Next.js", "D3.js", "PostgreSQL", "Tailwind"],
     year: "2025",
+    metrics: { conversion: "+340%", speed: "98/100", users: "50K+" },
+    accent: "#10b981",
+    duration: 6000,
   },
   {
-    title: "SaaS Dashboard",
-    category: "Aplicacao Web",
-    description:
-      "Dashboard analitico com visualizacao de dados em tempo real e gestao de equipes.",
-    image:
-      "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80",
-    tags: ["TypeScript", "Tailwind", "Charts"],
+    title: "Luxe Commerce",
+    category: "E-Commerce Platform",
+    client: "Luxe Brands Co",
+    description: "Plataforma de e-commerce premium com checkout inteligente, recomendações por IA e gestão de inventário em tempo real.",
+    image: "https://pixel77.com/wp-content/uploads/2024/06/ecommerce-website-designs-1-1024x768.webp",
+    demoUrl: "https://luxe-commerce-demo.vercel.app",
+    tags: ["React", "Node.js", "Stripe", "Prisma"],
     year: "2025",
+    metrics: { conversion: "+280%", speed: "99/100", users: "12K+" },
+    accent: "#3b82f6",
+    duration: 7000,
   },
   {
-    title: "Restaurante Gourmet",
-    category: "Site Institucional",
-    description:
-      "Website elegante com sistema de reservas online e cardapio digital interativo.",
-    image:
-      "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1200&q=80",
-    tags: ["Design", "SEO", "Mobile"],
+    title: "Weld Finance",
+    category: "Fintech Platform",
+    client: "Weld Bank",
+    description: "Aplicação bancária completa com gestão de cartões, investimentos, transferências instantâneas e análise de gastos.",
+    image: "https://qubstudio.com/wp-content/uploads/2023/04/Weld.jpg",
+    demoUrl: "https://weld-finance-demo.vercel.app",
+    tags: ["TypeScript", "Plaid API", "MongoDB", "Express"],
     year: "2024",
+    metrics: { conversion: "+420%", speed: "97/100", users: "25K+" },
+    accent: "#f59e0b",
+    duration: 6500,
   },
   {
-    title: "Agencia Criativa",
-    category: "Portfolio",
-    description:
-      "Portfolio moderno com animacoes fluidas e showcase de projetos interativo.",
-    image:
-      "https://images.unsplash.com/photo-1519222970733-f546218fa6d7?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    tags: ["Motion", "3D", "Creative"],
+    title: "Elyse Properties",
+    category: "Proptech Platform",
+    client: "Elyse Real Estate",
+    description: "Plataforma imobiliária com tours virtuais 3D, mapas interativos, busca inteligente e agendamento automatizado.",
+    image: "https://cdn.dribbble.com/userupload/19564469/file/original-fd6fb3b9ef09eeba7004324951163af4.png?format=webp&resize=2400x1600",
+    demoUrl: "https://elyse-properties-demo.vercel.app",
+    tags: ["Three.js", "Maps API", "Next.js", "Supabase"],
     year: "2024",
+    metrics: { conversion: "+560%", speed: "100/100", users: "8K+" },
+    accent: "#8b5cf6",
+    duration: 8000,
   },
   {
-    title: "Imobiliaria Digital",
-    category: "Plataforma",
-    description:
-      "Plataforma de imoveis com busca avancada, mapa interativo e tour virtual.",
-    image:
-      "https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=1200&q=80",
-    tags: ["Maps", "Filters", "API"],
+    title: "MedConnect",
+    category: "Health Platform",
+    client: "Vitalis Health",
+    description: "Sistema de telemedicina com consultas online, prontuário digital, integração com wearables e IA para diagnósticos.",
+    image: "https://cdn.dribbble.com/userupload/37443735/file/original-95234d7802d1aec5d60aed5c64a8a89e.png?format=webp&resize=2400x1600",
+    demoUrl: "https://medconnect-demo.vercel.app",
+    tags: ["React Native", "WebRTC", "TensorFlow", "AWS"],
     year: "2024",
+    metrics: { conversion: "+190%", speed: "96/100", users: "35K+" },
+    accent: "#06b6d4",
+    duration: 5500,
   },
   {
-    title: "Fitness & Wellness",
-    category: "Landing Page",
-    description:
-      "Landing page de alta conversao com agendamento online e area de membros.",
-    image:
-      "https://images.unsplash.com/photo-1554284126-aa88f22d8b74?auto=format&fit=crop&w=1200&q=80",
-    tags: ["Conversion", "CRM", "Auth"],
+    title: "TaskFlow AI",
+    category: "Productivity SaaS",
+    client: "Productive Labs",
+    description: "Gerenciamento de projetos com automação por IA, integração com múltiplas ferramentas e análise preditiva de prazos.",
+    image: "https://cdn.dribbble.com/userupload/42641803/file/still-84645395eb82f6cd53686cf089879b5b.png?resize=2400x1600",
+    demoUrl: "https://taskflow-ai-demo.vercel.app",
+    tags: ["Vue.js", "GraphQL", "OpenAI", "Docker"],
     year: "2024",
+    metrics: { conversion: "+310%", speed: "98/100", users: "18K+" },
+    accent: "#ec4899",
+    duration: 6000,
   },
 ];
 
-// SVG icons for each technology
-function ReactIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="currentColor">
-      <path d="M14.23 12.004a2.236 2.236 0 0 1-2.235 2.236 2.236 2.236 0 0 1-2.236-2.236 2.236 2.236 0 0 1 2.235-2.236 2.236 2.236 0 0 1 2.236 2.236zm2.648-10.69c-1.346 0-3.107.96-4.888 2.622-1.78-1.653-3.542-2.602-4.887-2.602-.31 0-.603.045-.871.133-3.053 1.007-2.986 7.58.184 12.645C3.24 18.178.627 21.19 1.645 22.514c.336.438.856.663 1.544.663 1.345 0 3.107-.96 4.888-2.624 1.78 1.654 3.542 2.603 4.887 2.603.31 0 .603-.044.871-.133 3.053-1.007 2.986-7.58-.184-12.645C16.76 5.822 19.373 2.81 18.355 1.486a1.997 1.997 0 0 0-1.544-.662zM12 17.598c-3.1 0-5.598-2.508-5.598-5.598S8.9 6.402 12 6.402s5.598 2.508 5.598 5.598-2.498 5.598-5.598 5.598z" />
-    </svg>
-  );
-}
+// Easing suave
+const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+const easeInOutCubic = (t: number) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
-function NextjsIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="currentColor">
-      <path d="M11.572 0c-.176 0-.31.001-.358.007a19.76 19.76 0 0 1-.364.033C7.443.346 4.25 2.185 2.228 5.012a11.875 11.875 0 0 0-2.119 5.243c-.096.659-.108.854-.108 1.747s.012 1.089.108 1.748c.652 4.506 3.86 8.292 8.209 9.695.779.25 1.6.422 2.534.525.363.04 1.935.04 2.299 0 1.611-.178 2.977-.577 4.323-1.264.207-.106.247-.134.219-.158-.02-.013-.9-1.193-1.955-2.62l-1.919-2.592-2.404-3.558a338.739 338.739 0 0 0-2.422-3.556c-.009-.002-.018 1.579-.023 3.51-.007 3.38-.01 3.515-.052 3.595a.426.426 0 0 1-.206.214c-.075.037-.14.044-.495.044H7.81l-.108-.068a.438.438 0 0 1-.157-.171l-.049-.106.005-4.703.007-4.705.073-.091a.637.637 0 0 1 .174-.143c.096-.047.134-.051.54-.051.478 0 .558.018.682.154.035.038 1.337 1.999 2.895 4.361a10760.433 10760.433 0 0 0 4.735 7.17l1.9 2.879.096-.063a12.317 12.317 0 0 0 2.466-2.163 11.944 11.944 0 0 0 2.824-6.134c.096-.66.108-.854.108-1.748 0-.893-.012-1.088-.108-1.747-.652-4.506-3.86-8.292-8.208-9.695a12.597 12.597 0 0 0-2.499-.523A33.119 33.119 0 0 0 11.572 0zm4.069 7.217c.347 0 .408.005.486.047a.473.473 0 0 1 .237.277c.018.06.023 1.365.018 4.304l-.006 4.218-.744-1.14-.746-1.14v-3.066c0-1.982.01-3.097.023-3.15a.478.478 0 0 1 .233-.296c.096-.05.13-.054.5-.054z" />
-    </svg>
-  );
-}
+export function Showcase() {
+  const [activeIndex, setActiveIndex] = useState(0);
+  
+  // Refs para animação fluida sem re-renders
+  const progressRef = useRef(0);
+  const slideProgressRef = useRef<HTMLDivElement>(null);
+  const slidesRef = useRef<(HTMLDivElement | null)[]>([]);
+  const rafRef = useRef<number | null>(null);
+  const lastTimeRef = useRef(0);
+  
+  const currentProject = projects[activeIndex];
 
-function TypeScriptIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="currentColor">
-      <path d="M1.125 0C.502 0 0 .502 0 1.125v21.75C0 23.498.502 24 1.125 24h21.75c.623 0 1.125-.502 1.125-1.125V1.125C24 .502 23.498 0 22.875 0zm17.363 9.75c.612 0 1.154.037 1.627.111a6.38 6.38 0 0 1 1.306.34v2.458a3.95 3.95 0 0 0-.643-.361 5.093 5.093 0 0 0-.717-.26 5.453 5.453 0 0 0-1.426-.2c-.3 0-.573.028-.819.086a2.1 2.1 0 0 0-.623.242c-.17.104-.3.229-.393.374a.888.888 0 0 0-.14.49c0 .196.053.373.156.529.104.156.252.304.443.444s.423.276.696.41c.273.135.582.274.926.416.47.197.892.407 1.266.628.374.222.695.473.963.753.268.279.472.598.614.957.142.359.214.776.214 1.253 0 .657-.125 1.21-.373 1.656a3.033 3.033 0 0 1-1.012 1.085 4.38 4.38 0 0 1-1.487.596c-.566.12-1.163.18-1.79.18a9.916 9.916 0 0 1-1.84-.164 5.544 5.544 0 0 1-1.512-.493v-2.63a5.033 5.033 0 0 0 3.237 1.2c.333 0 .624-.03.872-.09.249-.06.456-.144.623-.25.166-.108.29-.234.373-.38a1.023 1.023 0 0 0-.074-1.089 2.12 2.12 0 0 0-.537-.5 5.597 5.597 0 0 0-.807-.444 27.72 27.72 0 0 0-1.007-.436c-.918-.383-1.602-.852-2.053-1.405-.45-.553-.676-1.222-.676-2.005 0-.614.123-1.141.369-1.582.246-.441.58-.804 1.004-1.089a4.494 4.494 0 0 1 1.47-.629 7.536 7.536 0 0 1 1.77-.201zm-15.113.188h9.563v2.166H9.506v9.646H6.789v-9.646H3.375z" />
-    </svg>
-  );
-}
-
-function TailwindIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="currentColor">
-      <path d="M12.001 4.8c-3.2 0-5.2 1.6-6 4.8 1.2-1.6 2.6-2.2 4.2-1.8.913.228 1.565.89 2.288 1.624C13.666 10.618 15.027 12 18.001 12c3.2 0 5.2-1.6 6-4.8-1.2 1.6-2.6 2.2-4.2 1.8-.913-.228-1.565-.89-2.288-1.624C16.337 6.182 14.976 4.8 12.001 4.8zm-6 7.2c-3.2 0-5.2 1.6-6 4.8 1.2-1.6 2.6-2.2 4.2-1.8.913.228 1.565.89 2.288 1.624 1.177 1.194 2.538 2.576 5.512 2.576 3.2 0 5.2-1.6 6-4.8-1.2 1.6-2.6 2.2-4.2 1.8-.913-.228-1.565-.89-2.288-1.624C10.337 13.382 8.976 12 6.001 12z" />
-    </svg>
-  );
-}
-
-function NodejsIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="currentColor">
-      <path d="M11.998 24c-.321 0-.641-.084-.922-.247l-2.936-1.737c-.438-.245-.224-.332-.08-.383.585-.203.703-.25 1.328-.604.065-.037.151-.023.218.017l2.256 1.339a.29.29 0 0 0 .272 0l8.795-5.076a.277.277 0 0 0 .134-.238V6.921a.28.28 0 0 0-.137-.242l-8.791-5.072a.278.278 0 0 0-.271 0L3.075 6.68a.28.28 0 0 0-.138.24v10.15a.27.27 0 0 0 .136.235l2.409 1.392c1.307.654 2.108-.116 2.108-.89V7.787c0-.142.114-.253.256-.253h1.115c.139 0 .255.112.255.253v10.021c0 1.745-.95 2.745-2.604 2.745-.508 0-.909 0-2.026-.551L2.28 18.675a1.857 1.857 0 0 1-.922-1.604V6.921c0-.659.353-1.275.922-1.603L11.075.242a1.929 1.929 0 0 1 1.848 0l8.794 5.076c.57.329.924.944.924 1.603v10.15a1.86 1.86 0 0 1-.924 1.604l-8.794 5.078a1.834 1.834 0 0 1-.925.247zm2.722-6.986c-3.942 0-4.766-1.813-4.766-3.332 0-.142.114-.253.255-.253h1.14c.127 0 .233.092.253.216.172 1.164.686 1.75 3.118 1.75 1.918 0 2.734-.434 2.734-1.453 0-.588-.232-1.024-3.213-1.317-2.49-.245-4.03-.796-4.03-2.791 0-1.837 1.55-2.932 4.148-2.932 2.917 0 4.36 1.012 4.543 3.182a.26.26 0 0 1-.066.193.254.254 0 0 1-.183.08h-1.145a.252.252 0 0 1-.247-.199c-.274-1.222-.942-1.614-2.902-1.614-2.137 0-2.386.745-2.386 1.302 0 .676.293.873 3.11 1.254 2.793.377 4.133.912 4.133 2.84 0 1.985-1.655 3.12-4.543 3.12z" />
-    </svg>
-  );
-}
-
-function PostgresIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="currentColor">
-      <path d="M23.5594 14.7228a.5269.5269 0 0 0-.0563-.1191c-.139-.2632-.4768-.3418-1.0074-.2321-1.6533.3418-2.2773.1191-2.5765-.0805.7468-1.214 1.3708-2.5744 1.8735-4.0783.2441-.7317.4199-1.4531.5205-2.1434.1006-.6903.1328-1.3497.0938-1.957a5.0393 5.0393 0 0 0-.3281-1.6729C21.3027 2.8594 19.9961 1.5 18.1094 1.5c-.7578 0-1.4336.2188-2.0156.6523-.3281-.0898-.666-.168-1.0117-.2344-1.4805-.2812-3.0039-.1562-4.3125.3516-.5781-.3516-1.207-.6094-1.8789-.7734C7.9492 1.2891 6.8789 1.2891 5.9297 1.5703 4.6992 1.9375 3.75 2.7266 3.1641 3.8672c-.5859 1.1406-.7734 2.543-.5625 4.1797.2109 1.6367.7969 3.3867 1.7109 5.082.6523 1.207 1.3711 2.2109 2.1328 2.9883.5156.5273 1.043.918 1.5859 1.1758.0625.0312.125.0547.1914.0742a.7584.7584 0 0 0 .1953.0352c.3359.0352.9766-.168 1.4219-.5586.3789-.332.6445-.7656.8086-1.207a4.4948 4.4948 0 0 0 .9336.0898l.1289-.0078c.3125.3633.6836.6836 1.1055.9453.207.1289.4258.2344.6523.3203-.207.7422-.1758 1.4219.1289 1.9961.3516.6602.9844 1.0547 1.8242 1.1367.5195.0508 1.1133.0312 1.7656-.0586 1.043-.1445 1.9688-.4023 2.4414-.5742.2344.0508.5078.0742.8086.0742.7578 0 1.6562-.1836 2.4453-.7305.1172-.082.2266-.1719.3281-.2695.3281-.3125.5625-.7031.6875-1.1445.1094-.3867.1328-.8008.0703-1.2266z" />
-    </svg>
-  );
-}
-
-function VercelIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="currentColor">
-      <path d="M24 22.525H0l12-21.05 12 21.05z" />
-    </svg>
-  );
-}
-
-function FigmaIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="currentColor">
-      <path d="M15.852 8.981h-4.588V0h4.588c2.476 0 4.49 2.014 4.49 4.49s-2.014 4.491-4.49 4.491zM12.735 7.51h3.117c1.665 0 3.019-1.355 3.019-3.019s-1.354-3.019-3.019-3.019h-3.117V7.51zm0 1.471H8.148c-2.476 0-4.49-2.014-4.49-4.49S5.672 0 8.148 0h4.588v8.981zm-4.587-7.51c-1.665 0-3.019 1.355-3.019 3.019s1.354 3.019 3.019 3.019h3.117V1.471H8.148zm4.587 15.019H8.148c-2.476 0-4.49-2.014-4.49-4.49s2.014-4.49 4.49-4.49h4.588v8.98zM8.148 8.981c-1.665 0-3.019 1.355-3.019 3.019s1.354 3.019 3.019 3.019h3.117V8.981H8.148zM8.172 24c-2.489 0-4.515-2.014-4.515-4.49s2.014-4.49 4.49-4.49h4.588v4.441c0 2.503-2.047 4.539-4.563 4.539zm-.024-7.51a3.023 3.023 0 0 0-3.019 3.019c0 1.665 1.365 3.019 3.044 3.019 1.705 0 3.093-1.376 3.093-3.068v-2.97H8.148zm7.704 0h-.098c-2.476 0-4.49-2.014-4.49-4.49s2.014-4.49 4.49-4.49h.098c2.476 0 4.49 2.014 4.49 4.49s-2.014 4.49-4.49 4.49zm-.098-7.509c-1.665 0-3.019 1.355-3.019 3.019s1.354 3.019 3.019 3.019h.098c1.665 0 3.019-1.355 3.019-3.019s-1.354-3.019-3.019-3.019h-.098z" />
-    </svg>
-  );
-}
-
-
-function FramerMotionIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="currentColor">
-      <path d="M4 0h16v8h-8zM4 8h8l8 8H4zM4 16h8v8z" />
-    </svg>
-  );
-}
-
-const techStack: { name: string; icon: React.FC<{ className?: string }>; color: string }[] = [
-  { name: "React", icon: ReactIcon, color: "#61DAFB" },
-  { name: "Next.js", icon: NextjsIcon, color: "#000000" },
-  { name: "TypeScript", icon: TypeScriptIcon, color: "#3178C6" },
-  { name: "Tailwind CSS", icon: TailwindIcon, color: "#06B6D4" },
-  { name: "Node.js", icon: NodejsIcon, color: "#5FA04E" },
-  { name: "PostgreSQL", icon: PostgresIcon, color: "#4169E1" },
-  { name: "Vercel", icon: VercelIcon, color: "#000000" },
-  { name: "Figma", icon: FigmaIcon, color: "#F24E1E" },
-  { name: "Framer Motion", icon: FramerMotionIcon, color: "#0055FF" },
-];
-
-function FadeIn({
-  children,
-  className,
-  delay = 0,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  delay?: number;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-
+  // Animação principal - 60fps pura
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.unobserve(entry.target);
+    const duration = currentProject.duration;
+    
+    const animate = (time: number) => {
+      if (!lastTimeRef.current) lastTimeRef.current = time;
+      
+      const delta = time - lastTimeRef.current;
+      lastTimeRef.current = time;
+      
+      // Atualizar progresso
+      progressRef.current += delta / duration;
+      
+      if (progressRef.current >= 1) {
+        // Transição para próximo slide
+        progressRef.current = 0;
+        setActiveIndex((prev) => (prev + 1) % projects.length);
+      }
+      
+      // Aplicar transformações diretamente via DOM - sem re-render!
+      const easedProgress = easeOutCubic(progressRef.current);
+      
+      // Atualizar barra de progresso circular
+      if (slideProgressRef.current) {
+        const circle = slideProgressRef.current.querySelector('circle:last-child') as SVGCircleElement;
+        if (circle) {
+          circle.setAttribute('stroke-dasharray', `${easedProgress * 100}, 100`);
         }
-      },
-      { threshold: 0.1 }
-    );
+      }
+      
+      // Atualizar slides
+      slidesRef.current.forEach((slide, index) => {
+        if (!slide) return;
+        
+        const diff = index - activeIndex;
+        const normalizedDiff = ((diff % projects.length) + projects.length) % projects.length;
+        const adjustedDiff = normalizedDiff > projects.length / 2 ? normalizedDiff - projects.length : normalizedDiff;
+        
+        const isActive = index === activeIndex;
+        const isEntering = adjustedDiff === 0 && progressRef.current < 0.2;
+        const isExiting = adjustedDiff === 0 && progressRef.current > 0.8;
+        
+        // Calcular posição
+        let x = adjustedDiff * 100;
+        let scale = 1 - Math.abs(adjustedDiff) * 0.15;
+        let opacity = 1 - Math.abs(adjustedDiff) * 0.6;
+        let blur = Math.abs(adjustedDiff) * 8;
+        
+        if (isActive) {
+          if (isEntering) {
+            const enterProgress = progressRef.current / 0.2;
+            scale = 0.8 + easeOutCubic(enterProgress) * 0.2;
+            opacity = easeOutCubic(enterProgress);
+            x = 50 * (1 - easeOutCubic(enterProgress));
+          } else if (isExiting) {
+            const exitProgress = (progressRef.current - 0.8) / 0.2;
+            scale = 1 - easeInOutCubic(exitProgress) * 0.2;
+            opacity = 1 - easeInOutCubic(exitProgress) * 0.5;
+            x = -30 * easeInOutCubic(exitProgress);
+          }
+        }
+        
+        // Aplicar transformações diretamente
+        const clampedOpacity = Math.max(0.1, Math.min(1, opacity));
+        const clampedScale = Math.max(0.6, scale);
+        
+        slide.style.transform = `translateX(${x}%) scale(${clampedScale})`;
+        slide.style.opacity = String(clampedOpacity);
+        slide.style.filter = `blur(${blur}px)`;
+        slide.style.zIndex = String(10 - Math.abs(adjustedDiff));
+        
+        // Atualizar conteúdo interno se ativo
+        if (isActive) {
+          const content = slide.querySelector('.slide-content') as HTMLElement;
+          const image = slide.querySelector('img') as HTMLImageElement;
+          
+          if (image) {
+            const kenBurnsX = Math.sin(progressRef.current * Math.PI * 2) * 10;
+            const kenBurnsY = Math.cos(progressRef.current * Math.PI * 2) * 10;
+            const kenBurnsScale = 1 + progressRef.current * 0.05;
+            image.style.transform = `scale(${kenBurnsScale}) translate(${kenBurnsX}px, ${kenBurnsY}px)`;
+          }
+          
+          if (content) {
+            const title = content.querySelector('.slide-title') as HTMLElement;
+            const desc = content.querySelector('.slide-desc') as HTMLElement;
+            const tags = content.querySelector('.slide-tags') as HTMLElement;
+            const metrics = content.querySelectorAll('.slide-metric') as NodeListOf<HTMLElement>;
+            const demoBtn = content.querySelector('.demo-button') as HTMLElement;
+            
+            if (title) {
+              const titleProgress = progressRef.current < 0.15 
+                ? easeOutCubic(progressRef.current / 0.15)
+                : 1;
+              title.style.transform = `translateY(${(1 - titleProgress) * 100}%)`;
+              title.style.opacity = String(titleProgress);
+            }
+            
+            if (desc) {
+              const descProgress = progressRef.current < 0.2 
+                ? easeOutCubic(progressRef.current / 0.2)
+                : 1;
+              desc.style.opacity = String(descProgress);
+              desc.style.transform = `translateY(${(1 - descProgress) * 20}px)`;
+            }
+            
+            if (tags) {
+              const tagsOpacity = progressRef.current > 0.15 ? 1 : 0;
+              tags.style.opacity = String(tagsOpacity);
+              tags.style.transform = `translateY(${progressRef.current > 0.15 ? 0 : 10}px)`;
+            }
 
-    if (ref.current) {
-      observer.observe(ref.current);
-    }
+            if (demoBtn) {
+              const btnProgress = progressRef.current > 0.3 ? 1 : 0;
+              demoBtn.style.opacity = String(btnProgress);
+              demoBtn.style.transform = `translateY(${btnProgress ? 0 : 20}px)`;
+            }
+            
+            metrics.forEach((metric, i) => {
+              const metricProgress = progressRef.current > (0.25 + i * 0.05) ? 1 : 0;
+              metric.style.opacity = String(metricProgress);
+              metric.style.transform = `translateY(${metricProgress ? 0 : 20}px)`;
+            });
+          }
+        }
+      });
+      
+      rafRef.current = requestAnimationFrame(animate);
+    };
+    
+    rafRef.current = requestAnimationFrame(animate);
+    
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [activeIndex, currentProject.duration, projects.length]);
 
-    return () => observer.disconnect();
+  // Navegação manual
+  const goToSlide = useCallback((index: number) => {
+    progressRef.current = 0;
+    setActiveIndex(index);
   }, []);
 
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        "transition-all duration-700 ease-out",
-        isVisible
-          ? "opacity-100 translate-y-0 blur-0"
-          : "opacity-0 translate-y-8 blur-[2px]",
-        className
-      )}
-      style={{ transitionDelay: `${delay}ms` }}
-    >
-      {children}
-    </div>
-  );
-}
+  const nextSlide = useCallback(() => {
+    progressRef.current = 0;
+    setActiveIndex((prev) => (prev + 1) % projects.length);
+  }, []);
 
-function ProjectCard({
-  project,
-  index,
-}: {
-  project: (typeof projects)[0];
-  index: number;
-}) {
-  const [isHovered, setIsHovered] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const prevSlide = useCallback(() => {
+    progressRef.current = 0;
+    setActiveIndex((prev) => (prev - 1 + projects.length) % projects.length);
+  }, [projects.length]);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    setMousePos({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
+  const openDemo = (url: string) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (
-    <FadeIn delay={index * 100}>
-      <div
-        ref={cardRef}
-        className="group relative"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        onMouseMove={handleMouseMove}
-      >
-        {/* Spotlight border glow */}
-        <div
-          className="pointer-events-none absolute -inset-px rounded-2xl opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+    <section
+      className="relative h-screen w-full overflow-hidden bg-[#030303]"
+    >
+      {/* Background dinâmico */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div 
+          className="absolute inset-0 transition-colors duration-1000"
           style={{
-            background: isHovered
-              ? `radial-gradient(400px circle at ${mousePos.x}px ${mousePos.y}px, hsl(var(--primary) / 0.12), transparent 60%)`
-              : "none",
+            background: `
+              radial-gradient(circle at 20% 50%, ${currentProject.accent}15 0%, transparent 50%),
+              radial-gradient(circle at 80% 50%, ${currentProject.accent}05 0%, transparent 40%)
+            `,
+          }}
+        />
+        
+        <div 
+          className="absolute inset-0 opacity-[0.02]"
+          style={{
+            backgroundImage: `
+              linear-gradient(to right, #fff 1px, transparent 1px),
+              linear-gradient(to bottom, #fff 1px, transparent 1px)
+            `,
+            backgroundSize: "60px 60px",
           }}
         />
 
-        {/* Card */}
-        <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-card transition-all duration-500 group-hover:border-border group-hover:shadow-2xl group-hover:shadow-foreground/3">
-          {/* Image container */}
-          <div className="relative aspect-16/10 overflow-hidden">
-            <img
-              src={project.image || "/placeholder.svg"}
-              alt={`Preview do projeto ${project.title}`}
-              className="h-full w-full object-cover transition-all duration-700 ease-out group-hover:scale-[1.04]"
-              crossOrigin="anonymous"
-            />
+        {[...Array(15)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-1 rounded-full"
+            style={{
+              background: currentProject.accent,
+              left: `${10 + Math.random() * 80}%`,
+              top: `${10 + Math.random() * 80}%`,
+              opacity: 0.2 + Math.random() * 0.3,
+              animation: `float ${8 + Math.random() * 8}s ease-in-out infinite`,
+              animationDelay: `${Math.random() * 5}s`,
+            }}
+          />
+        ))}
+      </div>
 
-            {/* Image overlay gradient */}
-            <div className="absolute inset-0 bg-linear-to-t from-card via-card/20 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-
-            {/* Top bar: category + year */}
-            <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-5">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-foreground/10 bg-background/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-foreground backdrop-blur-md">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                {project.category}
-              </span>
-              <span className="rounded-full border border-foreground/10 bg-background/70 px-2.5 py-1 text-[11px] font-medium tabular-nums text-muted-foreground backdrop-blur-md">
-                {project.year}
-              </span>
-            </div>
-
-            {/* Hover CTA */}
-            <div className="absolute inset-0 flex items-end justify-start p-5 translate-y-4 opacity-0 transition-all duration-500 ease-out group-hover:translate-y-0 group-hover:opacity-100">
-              <button
-                type="button"
-                className="inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-[13px] font-semibold text-background transition-transform duration-300 hover:scale-105 active:scale-95"
+      {/* Container dos slides */}
+      <div className="absolute inset-0 flex items-center justify-center" style={{ perspective: "2000px" }}>
+        <div className="relative w-full h-full flex items-center justify-center">
+          {projects.map((project, index) => {
+            const isActive = index === activeIndex;
+            
+            return (
+              <div
+                key={project.title}
+                ref={(el) => { slidesRef.current[index] = el; }}
+                className="absolute w-[85vw] md:w-[70vw] lg:w-[60vw] aspect-16/10 will-change-transform"
+                style={{
+                  transform: "translateX(100%) scale(0.6)",
+                  opacity: 0,
+                }}
               >
-                Ver Projeto
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                <div 
+                  className="relative w-full h-full rounded-3xl overflow-hidden"
+                  style={{
+                    background: "rgba(10, 10, 10, 0.9)",
+                    boxShadow: isActive 
+                      ? `0 50px 100px -20px ${project.accent}30, 0 30px 60px -30px rgba(0,0,0,0.8)`
+                      : "0 25px 50px -12px rgba(0,0,0,0.5)",
+                    border: `1px solid ${isActive ? project.accent + "40" : "rgba(255,255,255,0.1)"}`,
+                  }}
                 >
-                  <line x1="7" y1="17" x2="17" y2="7" />
-                  <polyline points="7 7 17 7 17 17" />
-                </svg>
-              </button>
+                  {/* Imagem */}
+                  <div className="absolute inset-0 overflow-hidden">
+                    <img
+                      src={project.image}
+                      alt={project.title}
+                      className="w-full h-full object-cover will-change-transform"
+                      style={{
+                        transform: "scale(1.1)",
+                        filter: isActive ? "brightness(1)" : "brightness(0.6)",
+                      }}
+                    />
+                    
+                    <div className="absolute inset-0 bg-linear-to-r from-black/80 via-black/40 to-transparent" />
+                    <div className="absolute inset-0 bg-linear-to-t from-black/90 via-transparent to-black/20" />
+                    
+                    <div 
+                      className="absolute inset-0 mix-blend-overlay"
+                      style={{
+                        background: `radial-gradient(circle at 30% 50%, ${project.accent} 0%, transparent 60%)`,
+                        opacity: isActive ? 0.3 : 0.1,
+                      }}
+                    />
+                  </div>
+
+                  {/* Conteúdo */}
+                  <div className="slide-content absolute inset-0 p-8 md:p-12 lg:p-16 flex flex-col justify-between">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-4">
+                        <span 
+                          className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider"
+                          style={{
+                            background: `${project.accent}20`,
+                            border: `1px solid ${project.accent}40`,
+                            color: project.accent,
+                            boxShadow: `0 0 20px ${project.accent}20`,
+                          }}
+                        >
+                          {project.category}
+                        </span>
+                        <span className="text-white/40 text-sm font-mono">
+                          {project.year}
+                        </span>
+                      </div>
+                      
+                      <div className="text-right">
+                        <div className="text-white/60 text-sm font-medium">{project.client}</div>
+                      </div>
+                    </div>
+
+                    <div className="max-w-2xl">
+                      <div className="overflow-hidden mb-4">
+                        <h2 
+                          className="slide-title text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white will-change-transform"
+                          style={{
+                            textShadow: `0 0 80px ${project.accent}40`,
+                            transform: "translateY(100%)",
+                            opacity: 0,
+                          }}
+                        >
+                          {project.title}
+                        </h2>
+                      </div>
+
+                      <p 
+                        className="slide-desc text-lg md:text-xl text-white/70 leading-relaxed mb-6 will-change-transform"
+                        style={{
+                          opacity: 0,
+                          transform: "translateY(20px)",
+                        }}
+                      >
+                        {project.description}
+                      </p>
+
+                      <div 
+                        className="slide-tags flex flex-wrap gap-2 mb-8 will-change-transform"
+                        style={{
+                          opacity: 0,
+                          transform: "translateY(10px)",
+                        }}
+                      >
+                        {project.tags.map((tag) => (
+                          <span 
+                            key={tag}
+                            className="px-3 py-1.5 rounded-lg text-xs text-white/60 bg-white/5 border border-white/10 backdrop-blur-sm"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* Botão Demo */}
+                      <button
+                        onClick={() => openDemo(project.demoUrl)}
+                        className="demo-button group relative px-8 py-4 rounded-xl font-semibold text-sm uppercase tracking-wider overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 will-change-transform"
+                        style={{
+                          opacity: 0,
+                          transform: "translateY(20px)",
+                          background: `linear-gradient(135deg, ${project.accent} 0%, ${project.accent}dd 100%)`,
+                          boxShadow: `0 10px 40px -10px ${project.accent}50`,
+                        }}
+                      >
+                        <span className="relative z-10 flex items-center gap-2 text-white">
+                          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          Ver Demo ao Vivo
+                        </span>
+                        <div 
+                          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                          style={{
+                            background: `linear-gradient(135deg, ${project.accent}dd 0%, ${project.accent} 100%)`,
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                      </button>
+
+                      <div className="flex gap-8 md:gap-12 mt-8">
+                        {Object.entries(project.metrics).map(([key, value], _i) => (
+                          <div 
+                            key={key}
+                            className="slide-metric relative will-change-transform"
+                            style={{
+                              opacity: 0,
+                              transform: "translateY(20px)",
+                            }}
+                          >
+                            <div 
+                              className="text-2xl md:text-3xl font-bold mb-1"
+                              style={{ color: project.accent }}
+                            >
+                              {value}
+                            </div>
+                            <div className="text-[10px] uppercase tracking-wider text-white/40">
+                              {key === "conversion" ? "Conversão" : key === "speed" ? "Performance" : "Base de Usuários"}
+                            </div>
+                            
+                            <div className="absolute -bottom-2 left-0 w-full h-0.5 bg-white/10 rounded-full overflow-hidden">
+                              <div 
+                                className="metric-bar h-full rounded-full will-change-transform"
+                                style={{
+                                  background: project.accent,
+                                  width: "0%",
+                                  transition: "width 0.3s ease-out",
+                                }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div 
+                      className="absolute bottom-8 right-8 text-[150px] md:text-[200px] font-bold leading-none select-none pointer-events-none"
+                      style={{
+                        color: "transparent",
+                        WebkitTextStroke: `1px ${project.accent}20`,
+                        opacity: 0.5,
+                      }}
+                    >
+                      {String(index + 1).padStart(2, "0")}
+                    </div>
+                  </div>
+
+                  {/* Borda luminosa */}
+                  {isActive && (
+                    <div 
+                      className="absolute inset-0 rounded-3xl pointer-events-none"
+                      style={{
+                        background: `linear-gradient(90deg, transparent, ${project.accent}40, transparent)`,
+                        backgroundSize: "200% 100%",
+                        animation: "shimmer 3s infinite linear",
+                        mask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+                        maskComposite: "xor",
+                        WebkitMaskComposite: "xor",
+                        padding: "2px",
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* UI Overlay */}
+      <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-6 md:p-12 z-20">
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.4em] text-white/30 mb-2 font-mono">
+              Portfólio de Software
             </div>
+            <h1 className="text-2xl md:text-3xl font-light text-white/80 tracking-tight">
+              Projetos <span className="font-semibold text-white">Desenvolvidos</span>
+            </h1>
           </div>
 
-          {/* Content */}
-          <div className="relative p-5 pb-6">
-            {/* Title row */}
-            <div className="flex items-start justify-between gap-3">
-              <h3 className="text-lg font-semibold tracking-tight text-foreground transition-colors duration-300 group-hover:text-primary">
-                {project.title}
-              </h3>
-              <div className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border/80 text-muted-foreground transition-all duration-300 group-hover:border-primary/30 group-hover:text-primary">
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                >
-                  <line x1="7" y1="17" x2="17" y2="7" />
-                  <polyline points="7 7 17 7 17 17" />
-                </svg>
-              </div>
+          <div ref={slideProgressRef} className="relative w-16 h-16">
+            <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+              <path
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                fill="none"
+                stroke="rgba(255,255,255,0.1)"
+                strokeWidth="2"
+              />
+              <path
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                fill="none"
+                stroke={currentProject.accent}
+                strokeWidth="2"
+                strokeDasharray="0, 100"
+                strokeLinecap="round"
+                className="transition-none"
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-xs font-mono text-white/60">
+                {String(activeIndex + 1).padStart(2, "0")}
+              </span>
             </div>
+          </div>
+        </div>
 
-            {/* Description */}
-            <p className="mt-2.5 text-[13px] leading-relaxed text-muted-foreground">
-              {project.description}
-            </p>
-
-            {/* Divider */}
-            <div className="my-4 h-px bg-border/60" />
-
-            {/* Tags */}
-            <div className="flex flex-wrap gap-1.5">
-              {project.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-flex items-center rounded-md border border-border/60 bg-muted/50 px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors duration-300 group-hover:border-primary/20 group-hover:text-foreground"
+        <div className="flex justify-between items-end pointer-events-auto">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={prevSlide}
+              className="w-12 h-12 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm flex items-center justify-center text-white/60 hover:text-white hover:border-white/30 transition-all duration-300 hover:scale-110"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+            
+            <div className="flex gap-2">
+              {projects.map((project, index) => (
+                <button
+                  key={index}
+                  onClick={() => goToSlide(index)}
+                  className="group relative h-1 rounded-full overflow-hidden transition-all duration-300"
+                  style={{
+                    width: index === activeIndex ? 48 : 16,
+                    background: "rgba(255,255,255,0.1)",
+                  }}
                 >
-                  {tag}
-                </span>
+                  <div 
+                    className="absolute inset-0 rounded-full transition-all duration-300"
+                    style={{
+                      background: project.accent,
+                      opacity: index === activeIndex ? 1 : 0,
+                      transform: index === activeIndex ? "scaleX(1)" : "scaleX(0)",
+                      transformOrigin: "left",
+                    }}
+                  />
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-32 h-20 rounded-lg overflow-hidden opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none">
+                    <img src={project.image} alt="" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/50" />
+                    <div className="absolute bottom-2 left-2 text-[10px] text-white font-medium truncate max-w-[90%]">
+                      {project.title}
+                    </div>
+                  </div>
+                </button>
               ))}
             </div>
+
+            <button
+              onClick={nextSlide}
+              className="w-12 h-12 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm flex items-center justify-center text-white/60 hover:text-white hover:border-white/30 transition-all duration-300 hover:scale-110"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </button>
           </div>
         </div>
       </div>
-    </FadeIn>
-  );
-}
 
-export function Showcase() {
-  return (
-    <section
-      id="showcase"
-      className="relative py-24 md:py-32 px-6 md:px-12 lg:px-20"
-    >
-      {/* Background accent line */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-border to-transparent" />
-
-      <div className="mx-auto max-w-7xl">
-        {/* Header */}
-        <div className="mb-20 max-w-2xl">
-          <FadeIn>
-            <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-primary">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-              Selected Work
-            </span>
-          </FadeIn>
-
-          <FadeIn delay={100}>
-            <h2 className="mt-6 text-3xl font-bold tracking-tight text-foreground md:text-4xl lg:text-5xl text-balance">
-              Projetos que entregam{" "}
-              <span className="text-primary">resultados reais</span>
-            </h2>
-          </FadeIn>
-
-          <FadeIn delay={200}>
-            <p className="mt-5 text-base leading-relaxed text-muted-foreground md:text-lg">
-              Cada site e criado sob medida para maximizar conversao, performance
-              e experiencia do usuario.
-            </p>
-          </FadeIn>
-        </div>
-
-        {/* Projects grid */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {projects.map((project, index) => (
-            <ProjectCard key={project.title} project={project} index={index} />
-          ))}
-        </div>
-
-        {/* Tech Marquee */}
-        <BlurFade delay={0.3} inView>
-          <div className="mt-16 relative bg-muted/30 py-6 rounded-2xl border">
-            <div className="pointer-events-none absolute left-0 top-0 bottom-0 z-10 w-32 bg-linear-to-r from-muted/40 to-transparent rounded-2xl" />
-            <div className="pointer-events-none absolute right-0 top-0 bottom-0 z-10 w-32 bg-linear-to-l from-muted/40 to-transparent rounded-2xl" />
-            <Marquee pauseOnHover className="[--duration:30s]">
-              {techStack.map((tech) => {
-                const Icon = tech.icon;
-                return (
-                  <div
-                    key={tech.name}
-                    className="mx-4 flex items-center gap-2.5 rounded-full border border-border/50 bg-card px-4 py-2"
-                  >
-                    <Icon className="h-4 w-4 shrink-0" />
-                    <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-                      {tech.name}
-                    </span>
-                  </div>
-                );
-              })}
-            </Marquee>
-          </div>
-        </BlurFade>
+      <div className="absolute right-8 top-1/2 -translate-y-1/2 h-64 w-px bg-white/10 hidden lg:block">
+        <div 
+          className="w-full transition-all duration-300"
+          style={{
+            height: `${((activeIndex + progressRef.current) / projects.length) * 100}%`,
+            background: `linear-gradient(to bottom, ${currentProject.accent}, transparent)`,
+          }}
+        />
+        
+        {projects.map((_, index) => (
+          <div
+            key={index}
+            className="absolute w-2 h-2 rounded-full -left-0.5 transition-all duration-300"
+            style={{
+              top: `${(index / projects.length) * 100}%`,
+              background: index === activeIndex ? currentProject.accent : "rgba(255,255,255,0.2)",
+              transform: index === activeIndex ? "scale(1.5)" : "scale(1)",
+              boxShadow: index === activeIndex ? `0 0 10px ${currentProject.accent}` : "none",
+            }}
+          />
+        ))}
       </div>
+
+      <style >{`
+        @keyframes shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-20px); }
+        }
+      `}</style>
     </section>
   );
 }

@@ -7,57 +7,58 @@ import { TextAnimate } from "@/components/ui/text-animate";
 
 const plans = [
   {
-    name: "Starter",
+    name: "Landing Page",
     description:
-      "Ideal para quem esta comecando e precisa de presenca online.",
+      "Página única desenvolvida do zero. Ideal para apresentar um produto, serviço ou capturar contatos.",
     price: "1.497",
     popular: false,
     features: [
-      "Landing page responsiva",
-      "Ate 3 paginas",
-      "Design personalizado",
-      "SEO basico",
-      "Formulario de contato",
-      "Entrega em 7 dias",
+      "Design exclusivo (sem templates prontos)",
+      "Desenvolvimento React/Next.js",
+      "Responsivo (desktop, tablet, mobile)",
+      "Formulário de contato funcional",
+      "Animações e interações",
+      "Entrega em 5 dias úteis",
+      "1 mês de suporte técnico",
     ],
-    cta: "Escolher Starter",
+    cta: "Quero Landing Page",
   },
   {
-    name: "Professional",
+    name: "Site Institucional",
     description:
-      "Para negocios que precisam de um site completo e otimizado.",
+      "Site completo com múltiplas páginas. Perfeito para empresas que precisam de presença digital profissional.",
     price: "3.497",
     popular: true,
     features: [
-      "Site completo responsivo",
-      "Ate 8 paginas",
-      "Design premium customizado",
-      "SEO avancado",
-      "Blog integrado",
-      "Painel administrativo",
-      "Integracao com analytics",
-      "Suporte por 30 dias",
+      "Até 8 páginas personalizadas",
+      "Design UI/UX exclusivo",
+      "Código limpo e documentado",
+      "Painel administrativo para edição",
+      "Blog integrado (opcional)",
+      "Integração com Analytics (visualização de dados)",
+      "Entrega em 10-15 dias úteis",
+      "3 meses de manutenção inclusa",
     ],
-    cta: "Escolher Professional",
+    cta: "Quero Site Completo",
   },
   {
-    name: "Enterprise",
+    name: "Sistema Web / E-commerce",
     description:
-      "Solucao sob medida para projetos complexos e escalaveis.",
-    price: "7.997",
+      "Plataforma sob medida com funcionalidades específicas. Para negócios que precisam de mais que um site informativo.",
+    price: "6.997",
     popular: false,
     features: [
-      "Plataforma sob medida",
-      "Paginas ilimitadas",
-      "UI/UX premium",
-      "SEO completo + performance",
-      "E-commerce ou SaaS",
-      "API personalizada",
-      "Infraestrutura escalavel",
-      "Deploy + CI/CD",
-      "Suporte por 90 dias",
+      "Arquitetura personalizada",
+      "Páginas e funcionalidades ilimitadas",
+      "Sistema de gestão completo",
+      "Integrações com APIs e serviços externos",
+      "Banco de dados otimizado",
+      "Painel administrativo avançado",
+      "Segurança e performance",
+      "Deploy e configuração de servidor",
+      "6 meses de manutenção inclusa",
     ],
-    cta: "Escolher Enterprise",
+    cta: "Falar sobre Projeto",
   },
 ];
 
@@ -141,7 +142,7 @@ function PlanCard({
             </span>
           </div>
           <span className="mt-1 text-xs text-muted-foreground">
-            pagamento unico
+            pagamento único • manutenção mensal opcional
           </span>
 
           {/* Divider */}
@@ -206,7 +207,7 @@ export function Pricing() {
           <BlurFade delay={0.1} inView>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-foreground text-balance">
               <TextAnimate animation="blurInUp" by="word" as="span" once>
-                {"Investimento que se "}
+                {"Sites bem feitos, "}
               </TextAnimate>
               <TextAnimate
                 animation="blurInUp"
@@ -216,15 +217,14 @@ export function Pricing() {
                 className="text-primary"
                 once
               >
-                paga sozinho
+                sem complicação
               </TextAnimate>
             </h2>
           </BlurFade>
 
           <BlurFade delay={0.2} inView>
             <p className="mt-4 text-muted-foreground text-base md:text-lg leading-relaxed">
-              Escolha o plano ideal para o seu projeto. Todos incluem design
-              responsivo, codigo limpo e suporte dedicado.
+              Desenvolvimento técnico de qualidade. Você pensa no seu negócio, eu cuido da parte digital.
             </p>
           </BlurFade>
         </div>
@@ -236,16 +236,25 @@ export function Pricing() {
           ))}
         </div>
 
-        {/* Footer note */}
+        {/* Maintenance note */}
         <BlurFade delay={0.5} inView>
           <div className="mt-12 text-center">
             <p className="text-sm text-muted-foreground">
-              Precisa de algo diferente?{" "}
+              <span className="font-medium text-foreground">Manutenção mensal:</span> A partir de R$ 197/mês para atualizações, backups, correções e pequenas alterações.
+            </p>
+          </div>
+        </BlurFade>
+
+        {/* Footer note */}
+        <BlurFade delay={0.6} inView>
+          <div className="mt-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              Tem um projeto específico?{" "}
               <a
                 href="#contact"
                 className="text-primary font-medium hover:underline"
               >
-                Fale conosco para um orcamento personalizado
+                Vamos conversar
               </a>
             </p>
           </div>
@@ -260,14 +269,13 @@ export function Pricing() {
         <div className="max-w-4xl mx-auto text-center">
           <BlurFade delay={0} inView>
             <h3 className="text-2xl md:text-3xl font-bold text-foreground text-balance">
-              Pronto para transformar sua presenca digital?
+              Vamos criar seu site?
             </h3>
           </BlurFade>
 
           <BlurFade delay={0.1} inView>
             <p className="mt-4 text-muted-foreground leading-relaxed max-w-xl mx-auto">
-              Entre em contato e receba uma proposta personalizada em ate 24
-              horas. Sem compromisso.
+              Entre em contato e receba uma proposta detalhada em até 24 horas. Desenvolvimento direto ao ponto.
             </p>
           </BlurFade>
 
@@ -291,24 +299,6 @@ export function Pricing() {
                   <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
                 </svg>
                 contato@nexhub.com
-              </a>
-              <a
-                href="https://wa.me/5511999999999"
-                className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-8 py-3.5 text-sm font-semibold text-foreground transition-all hover:bg-secondary hover:border-muted-foreground/20"
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                </svg>
-                WhatsApp
               </a>
             </div>
           </BlurFade>
@@ -340,7 +330,7 @@ export function Pricing() {
               </span>
             </div>
             <p className="text-xs text-muted-foreground">
-              {"2026 NexHub. Todos os direitos reservados."}
+              {"2026 NexHub. Desenvolvimento & manutenção de sites."}
             </p>
             <div className="flex items-center gap-6">
               <a
