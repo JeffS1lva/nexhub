@@ -520,7 +520,7 @@ const OrbitalSystem = memo(function OrbitalSystem({
             </svg>
           </div>
         </div>
-        {ORBITALS_CONFIG.flatMap((orbit, oi) => 
+        {ORBITALS_CONFIG.flatMap((orbit, _oi) => 
           orbit.nodes.map((node, ni) => {
             const angle = (ni / orbit.nodes.length) * Math.PI * 2;
             const x = Math.cos(angle) * orbit.radius;
