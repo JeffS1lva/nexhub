@@ -1,241 +1,105 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { 
+  useEffect, 
+  useState, 
+  useRef, 
+  useCallback, 
+  useMemo,
+  lazy, 
+  Suspense,
+  memo 
+} from "react";
 import { BlurFade } from "@/components/ui/blur-fade";
 import { NumberTicker } from "@/components/ui/number-ticker";
 import { AnimatedShinyText } from "@/components/ui/animated-shiny-text";
 import { TextAnimate } from "@/components/ui/text-animate";
 import { ShimmerButton } from "@/components/ui/shimmer-button";
 
-import DarkVeil from "@/components/DarkVeil";
+// Lazy load do componente pesado
+const DarkVeil = lazy(() => import("@/components/DarkVeil"));
 
-// Efeito de texto magnético - Otimizado para touch
-function MagneticText({
-  children,
-  className = ""
-}: {
-  children: string;
-  className?: string;
-}) {
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isTouch, setIsTouch] = useState(false);
-  const ref = useRef<HTMLSpanElement>(null);
-  const rafRef = useRef<number | undefined>(undefined);
+// ============================================
+// UTILITÁRIOS DE PERFORMANCE
+// ============================================
+
+// Hook para detectar visibilidade na viewport
+function useInView<T extends HTMLElement = HTMLDivElement>(options?: IntersectionObserverInit) {
+  const ref = useRef<T>(null);
+  const [isInView, setIsInView] = useState(false);
 
   useEffect(() => {
-    setIsTouch('ontouchstart' in window || navigator.maxTouchPoints > 0);
-  }, []);
+    const element = ref.current;
+    if (!element) return;
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!ref.current || isTouch) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      setIsInView(entry.isIntersecting);
+    }, { threshold: 0.1, ...options });
 
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [options?.threshold, options?.rootMargin]);
 
-    rafRef.current = requestAnimationFrame(() => {
-      const rect = ref.current!.getBoundingClientRect();
-      const x = (e.clientX - rect.left - rect.width / 2) * 0.2;
-      const y = (e.clientY - rect.top - rect.height / 2) * 0.2;
-      setPosition({ x, y });
-    });
-  }, [isTouch]);
-
-  const handleMouseLeave = useCallback(() => {
-    setPosition({ x: 0, y: 0 });
-  }, []);
-
-  return (
-    <span
-      ref={ref}
-      className={`inline-block transition-transform duration-300 ease-out will-change-transform ${className}`}
-      style={{
-        transform: `translate(${position.x}px, ${position.y}px)`,
-      }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-    >
-      {children}
-    </span>
-  );
+  return { ref, isInView };
 }
 
-// Efeito de revelação com clip-path - Mobile otimizado
-function ClipReveal({
-  text,
-  delay = 0,
-  className = ""
-}: {
-  text: string;
-  delay?: number;
-  className?: string;
-}) {
-  const [isVisible, setIsVisible] = useState(false);
+// Hook para detectar dispositivo de baixo desempenho
+function useDeviceCapabilities() {
+  const [isLowEnd, setIsLowEnd] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   useEffect(() => {
+    // Detecta preferência de redução de movimento
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     setPrefersReducedMotion(mediaQuery.matches);
 
-    const timeout = setTimeout(() => setIsVisible(true), delay);
-    return () => clearTimeout(timeout);
-  }, [delay]);
+    const handleChange = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mediaQuery.addEventListener('change', handleChange);
 
-  if (prefersReducedMotion) {
-    return <span className={className}>{text}</span>;
-  }
+    // Detecta hardware limitado
+    const memory = (navigator as any).deviceMemory;
+    const cores = navigator.hardwareConcurrency;
+    setIsLowEnd((memory && memory < 4) || (cores && cores <= 4));
 
-  return (
-    <span className={`relative inline-block overflow-hidden ${className}`}>
-      <span
-        className={`inline-block transition-transform duration-700 ease-out ${isVisible ? 'translate-y-0' : 'translate-y-full'}`}
-      >
-        {text}
-      </span>
-      <span
-        className={`absolute inset-0 bg-emerald-500 transition-transform duration-500 ease-in-out origin-bottom ${isVisible ? 'scale-y-0' : 'scale-y-100'}`}
-        style={{ transitionDelay: '200ms' }}
-      />
-    </span>
-  );
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+
+  return { isLowEnd, prefersReducedMotion };
 }
 
-// Card flutuante 3D - Mobile otimizado com gyroscope opcional
-function FloatingCard({
-  children,
-  delay = 0,
-  className = "",
-  intensity = 20
-}: {
-  children: React.ReactNode;
-  delay?: number;
-  className?: string;
-  intensity?: number;
-}) {
-  const [rotation, setRotation] = useState({ x: 0, y: 0 });
-  const [isHovered, setIsHovered] = useState(false);
-  const [isTouch, setIsTouch] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+// Throttle para RAF
+function useThrottledCallback<T extends (...args: any[]) => void>(
+  callback: T,
+  deps: React.DependencyList
+) {
   const rafRef = useRef<number | undefined>(undefined);
-
-  useEffect(() => {
-    setIsTouch('ontouchstart' in window || navigator.maxTouchPoints > 0);
-  }, []);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!ref.current || isTouch) return;
-
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-
+  
+  return useCallback((...args: Parameters<T>) => {
+    if (rafRef.current) return;
+    
     rafRef.current = requestAnimationFrame(() => {
-      const rect = ref.current!.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / rect.width - 0.5;
-      const y = (e.clientY - rect.top) / rect.height - 0.5;
-      setRotation({ x: y * intensity, y: -x * intensity });
+      callback(...args);
+      rafRef.current = undefined;
     });
-  }, [intensity, isTouch]);
-
-  const handleMouseLeave = useCallback(() => {
-    setIsHovered(false);
-    setRotation({ x: 0, y: 0 });
-  }, []);
-
-  return (
-    <div
-      ref={ref}
-      className={`relative transition-all duration-300 ease-out will-change-transform ${className}`}
-      style={{
-        transform: `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) ${isHovered ? 'scale(1.02)' : 'scale(1)'}`,
-        transformStyle: 'preserve-3d',
-        transitionDelay: `${delay}ms`,
-      }}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={handleMouseLeave}
-    >
-      {children}
-    </div>
-  );
+  }, deps);
 }
 
-// Efeito de onda de luz
-function LightSweep({
-  children,
-  className = ""
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={`relative overflow-hidden  group ${className}`}>
-      {children}
-      <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out bg-linear-to-r from-transparent via-white/20 to-transparent skew-x-12 pointer-events-none  " />
-    </div>
-  );
-}
+// ============================================
+// CONSTANTES ESTÁTICAS (sem hooks)
+// ============================================
 
-// Mobile Menu Component
-function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  if (!isOpen) return null;
+const PARTICLES = Array.from({ length: 12 }, (_, i) => ({
+  id: i,
+  top: 20 + ((i * 137) % 60),
+  left: 20 + ((i * 89) % 60),
+  duration: 2 + ((i * 3) % 4),
+  delay: ((i * 7) % 5) * 0.5,
+  size: 1 + (i % 3),
+  opacity: 0.2 + ((i * 13) % 3) * 0.1,
+}));
 
-  return (
-    <div className="fixed inset-0 z-50 md:hidden">
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" onClick={onClose} />
-      <div className="absolute top-20 left-4 right-4 bg-[#0f0f0f] border border-white/10 rounded-2xl p-6 shadow-2xl">
-        <div className="flex flex-col gap-4">
-          {["Como Funciona", "Serviços", "Preços", "Contato"].map((item) => (
-            <a
-              key={item}
-              href={`#${item.toLowerCase().replace(' ', '-')}`}
-              onClick={onClose}
-              className="text-lg font-medium text-white/80 hover:text-emerald-400 transition-colors py-2 border-b border-white/5 last:border-0 "
-            >
-              {item}
-            </a>
-          ))}
-          <a
-            href="#pricing"
-            onClick={onClose}
-            className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-black"
-          >
-            Começar Agora
-          </a>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Scroll Indicator Moderno
-function ModernScrollIndicator() {
-  const [isVisible, setIsVisible] = useState(true);
-  useEffect(() => {
-    const handleScroll = () => setIsVisible(window.scrollY < 100);
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  if (!isVisible) return null;
-  return (
-    <div className="hidden sm:block absolute bottom-8 left-1/2 -translate-x-1/2 z-20">
-      <BlurFade delay={1.5} inView duration={0.8}>
-        <button
-          onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
-          className="group flex flex-col items-center gap-3 cursor-pointer"
-        >
-          <div className="relative w-8 h-14 rounded-full border-2 border-emerald-500/30 group-hover:border-emerald-400/60 transition-colors bg-emerald-500/5">
-            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-1.5 h-3 bg-emerald-400 rounded-full animate-bounce shadow-[0_0_10px_rgba(34,211,238,0.8)]" />
-            <div className="absolute inset-0 rounded-full border border-emerald-400/20 animate-ping" />
-          </div>
-          <span className="text-[10px] font-mono text-emerald-500/60 uppercase tracking-[0.2em] group-hover:text-emerald-400 transition-colors">
-            Sincronizar
-          </span>
-        </button>
-      </BlurFade>
-    </div>
-  );
-}
-
-// Ícones das tecnologias como componentes SVG
-const TechIcons = {
+// Ícones como constantes (não componentes)
+const TechIconSVG = {
   react: (
     <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 sm:w-8 sm:h-8">
       <circle cx="12" cy="12" r="2" fill="#61DAFB" />
@@ -246,18 +110,8 @@ const TechIcons = {
   ),
   typescript: (
     <svg className="w-6 h-6 sm:w-8 sm:h-8" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
-
       <rect width="256" height="256" rx="24" fill="#3178C6" />
-
-
-      <text
-        x="50%"
-        y="58%"
-        text-anchor="middle"
-        font-family="Segoe UI, Arial, sans-serif"
-        font-size="110"
-        font-weight="bold"
-        fill="white">
+      <text x="50%" y="58%" textAnchor="middle" fontFamily="Segoe UI, Arial, sans-serif" fontSize="110" fontWeight="bold" fill="white">
         TS
       </text>
     </svg>
@@ -266,39 +120,22 @@ const TechIcons = {
     <svg className="w-6 h-6 sm:w-8 sm:h-8" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="triangleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#41D1FF" />
-          <stop offset="100%" stop-color="#BD34FE" />
+          <stop offset="0%" stopColor="#41D1FF" />
+          <stop offset="100%" stopColor="#BD34FE" />
         </linearGradient>
-
         <linearGradient id="boltGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#FFD000" />
-          <stop offset="100%" stop-color="#FF8C00" />
+          <stop offset="0%" stopColor="#FFD000" />
+          <stop offset="100%" stopColor="#FF8C00" />
         </linearGradient>
       </defs>
-
-      <polygon
-        points="128,16 232,216 24,216"
-        fill="url(#triangleGradient)" />
-
-      <path
-        d="M140 40 L70 150 H120 L100 220 L200 110 H150 L170 40 Z"
-        fill="url(#boltGradient)" />
+      <polygon points="128,16 232,216 24,216" fill="url(#triangleGradient)" />
+      <path d="M140 40 L70 150 H120 L100 220 L200 110 H150 L170 40 Z" fill="url(#boltGradient)" />
     </svg>
   ),
   nodejs: (
     <svg className="w-6 h-6 sm:w-8 sm:h-8" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
-      <polygon
-        points="128,16 224,72 224,184 128,240 32,184 32,72"
-        fill="#339933" />
-
-      <text
-        x="50%"
-        y="58%"
-        text-anchor="middle"
-        font-family="Arial, Helvetica, sans-serif"
-        font-size="64"
-        font-weight="bold"
-        fill="white">
+      <polygon points="128,16 224,72 224,184 128,240 32,184 32,72" fill="#339933" />
+      <text x="50%" y="58%" textAnchor="middle" fontFamily="Arial, Helvetica, sans-serif" fontSize="64" fontWeight="bold" fill="white">
         node
       </text>
     </svg>
@@ -318,38 +155,16 @@ const TechIcons = {
     </svg>
   ),
   tailwind: (
-     <svg
-    className="w-6 h-6 sm:w-8 sm:h-8"
-    viewBox="0 0 256 256"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <defs>
-      <linearGradient id="twGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#38BDF8" />
-        <stop offset="100%" stopColor="#0EA5E9" />
-      </linearGradient>
-    </defs>
-
-    <path
-      d="M40 110 
-         C70 80, 110 80, 140 110
-         C170 140, 200 140, 216 120
-         C190 160, 150 165, 120 135
-         C90 105, 60 105, 40 130
-         Z"
-      fill="url(#twGradient)"
-    />
-
-    <path
-      d="M40 150
-         C70 120, 110 120, 140 150
-         C170 180, 200 180, 216 160
-         C190 200, 150 205, 120 175
-         C90 145, 60 145, 40 170
-         Z"
-      fill="url(#twGradient)"
-    />
-  </svg>
+    <svg className="w-6 h-6 sm:w-8 sm:h-8" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="twGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#38BDF8" />
+          <stop offset="100%" stopColor="#0EA5E9" />
+        </linearGradient>
+      </defs>
+      <path d="M40 110 C70 80, 110 80, 140 110 C170 140, 200 140, 216 120 C190 160, 150 165, 120 135 C90 105, 60 105, 40 130 Z" fill="url(#twGradient)" />
+      <path d="M40 150 C70 120, 110 120, 140 150 C170 180, 200 180, 216 160 C190 200, 150 205, 120 175 C90 145, 60 145, 40 170 Z" fill="url(#twGradient)" />
+    </svg>
   ),
   nextjs: (
     <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 sm:w-8 sm:h-8">
@@ -362,72 +177,374 @@ const TechIcons = {
       <path d="M12 2L2 19h20L12 2z" fill="#2D3748" stroke="white" strokeWidth="0.5" />
       <path d="M12 6l-5 9h10l-5-9z" fill="white" />
     </svg>
-  )
+  ),
 };
 
-// Sistema de Órbitas 3D com Tecnologias
-function OrbitalSystem({ isTouch }: { isTouch: boolean }) {
+const ORBITALS_CONFIG = [
+  {
+    radius: 28,
+    speed: 0.5,
+    direction: 1,
+    nodes: [
+      { id: "react", icon: "react" as const, color: "#61DAFB", label: "React", offset: 0 },
+      { id: "typescript", icon: "typescript" as const, color: "#3178C6", label: "TypeScript", offset: Math.PI },
+    ]
+  },
+  {
+    radius: 42,
+    speed: 0.3,
+    direction: -1,
+    nodes: [
+      { id: "vite", icon: "vite" as const, color: "#646CFF", label: "Vite", offset: 0 },
+      { id: "nodejs", icon: "nodejs" as const, color: "#339933", label: "Node.js", offset: Math.PI / 2 },
+      { id: "tailwind", icon: "tailwind" as const, color: "#06B6D4", label: "Tailwind", offset: Math.PI },
+      { id: "nextjs", icon: "nextjs" as const, color: "#ffffff", label: "Next.js", offset: -Math.PI / 2 },
+    ]
+  },
+  {
+    radius: 56,
+    speed: 0.2,
+    direction: 1,
+    nodes: [
+      { id: "postgresql", icon: "postgresql" as const, color: "#336791", label: "PostgreSQL", offset: 0 },
+      { id: "sqlite", icon: "sqlite" as const, color: "#003B57", label: "SQLite", offset: Math.PI },
+      { id: "prisma", icon: "prisma" as const, color: "#2D3748", label: "Prisma", offset: Math.PI / 2 },
+    ]
+  }
+];
+
+// ============================================
+// COMPONENTES OTIMIZADOS
+// ============================================
+
+const MagneticText = memo(function MagneticText({
+  children,
+  className = ""
+}: {
+  children: string;
+  className?: string;
+}) {
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isTouch, setIsTouch] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+  const { ref: inViewRef, isInView } = useInView<HTMLSpanElement>();
+
+  useEffect(() => {
+    setIsTouch('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  }, []);
+
+  const setRefs = useCallback((node: HTMLSpanElement | null) => {
+    (ref as any).current = node;
+    (inViewRef as any).current = node;
+  }, [inViewRef]);
+
+  const handleMouseMove = useThrottledCallback((e: React.MouseEvent) => {
+    if (!ref.current || isTouch || !isInView) return;
+
+    const rect = ref.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left - rect.width / 2) * 0.2;
+    const y = (e.clientY - rect.top - rect.height / 2) * 0.2;
+    setPosition({ x, y });
+  }, [isTouch, isInView]);
+
+  const handleMouseLeave = useCallback(() => {
+    setPosition({ x: 0, y: 0 });
+  }, []);
+
+  return (
+    <span
+      ref={setRefs}
+      className={`inline-block transition-transform duration-300 ease-out will-change-transform ${className}`}
+      style={{
+        transform: `translate(${position.x}px, ${position.y}px)`,
+      }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
+      {children}
+    </span>
+  );
+});
+
+const ClipReveal = memo(function ClipReveal({
+  text,
+  delay = 0,
+  className = ""
+}: {
+  text: string;
+  delay?: number;
+  className?: string;
+}) {
+  const [isVisible, setIsVisible] = useState(false);
+  const { prefersReducedMotion } = useDeviceCapabilities();
+
+  useEffect(() => {
+    if (prefersReducedMotion) return;
+    const timeout = setTimeout(() => setIsVisible(true), delay);
+    return () => clearTimeout(timeout);
+  }, [delay, prefersReducedMotion]);
+
+  if (prefersReducedMotion) {
+    return <span className={className}>{text}</span>;
+  }
+
+  return (
+    <span className={`relative inline-block overflow-hidden ${className}`}>
+      <span
+        className={`inline-block transition-transform duration-700 ease-out ${isVisible ? 'translate-y-0' : 'translate-y-full'}`}
+      >
+        {text}
+      </span>
+      <span
+        className={`absolute inset-0 bg-emerald-500 transition-transform duration-500 ease-in-out origin-bottom ${isVisible ? 'scale-y-0' : 'scale-y-100'}`}
+        style={{ transitionDelay: '200ms' }}
+      />
+    </span>
+  );
+});
+
+const FloatingCard = memo(function FloatingCard({
+  children,
+  delay = 0,
+  className = "",
+  intensity = 20,
+  disabled = false
+}: {
+  children: React.ReactNode;
+  delay?: number;
+  className?: string;
+  intensity?: number;
+  disabled?: boolean;
+}) {
+  const [rotation, setRotation] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const { ref: inViewRef, isInView } = useInView<HTMLDivElement>();
+
+  const setRefs = useCallback((node: HTMLDivElement | null) => {
+    (ref as any).current = node;
+    (inViewRef as any).current = node;
+  }, [inViewRef]);
+
+  const handleMouseMove = useThrottledCallback((e: React.MouseEvent) => {
+    if (!ref.current || disabled || !isInView) return;
+
+    const rect = ref.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    setRotation({ x: y * intensity, y: -x * intensity });
+  }, [intensity, disabled, isInView]);
+
+  const handleMouseLeave = useCallback(() => {
+    setIsHovered(false);
+    setRotation({ x: 0, y: 0 });
+  }, []);
+
+  return (
+    <div
+      ref={setRefs}
+      className={`relative transition-all duration-300 ease-out will-change-transform ${className}`}
+      style={{
+        transform: disabled 
+          ? 'none' 
+          : `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) ${isHovered ? 'scale(1.02)' : 'scale(1)'}`,
+        transformStyle: 'preserve-3d',
+        transitionDelay: `${delay}ms`,
+      }}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={handleMouseLeave}
+    >
+      {children}
+    </div>
+  );
+});
+
+const LightSweep = memo(function LightSweep({
+  children,
+  className = ""
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`relative overflow-hidden group ${className}`}>
+      {children}
+      <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out bg-linear-to-r from-transparent via-white/20 to-transparent skew-x-12 pointer-events-none" />
+    </div>
+  );
+});
+
+const MobileMenu = memo(function MobileMenu({ 
+  isOpen, 
+  onClose 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+}) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 md:hidden">
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" onClick={onClose} />
+      <div className="absolute top-20 left-4 right-4 bg-[#0f0f0f] border border-white/10 rounded-2xl p-6 shadow-2xl">
+        <div className="flex flex-col gap-4">
+          {["Como Funciona", "Serviços", "Preços", "Contato"].map((item) => (
+            <a
+              key={item}
+              href={`#${item.toLowerCase().replace(' ', '-')}`}
+              onClick={onClose}
+              className="text-lg font-medium text-white/80 hover:text-emerald-400 transition-colors py-2 border-b border-white/5 last:border-0"
+            >
+              {item}
+            </a>
+          ))}
+          <a
+            href="#pricing"
+            onClick={onClose}
+            className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-black"
+          >
+            Começar Agora
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+const ModernScrollIndicator = memo(function ModernScrollIndicator() {
+  const [isVisible, setIsVisible] = useState(true);
+  
+  useEffect(() => {
+    let rafId: number;
+    const handleScroll = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        setIsVisible(window.scrollY < 100);
+      });
+    };
+    
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      cancelAnimationFrame(rafId);
+    };
+  }, []);
+
+  if (!isVisible) return null;
+  
+  return (
+    <div className="hidden sm:block absolute bottom-8 left-1/2 -translate-x-1/2 z-20">
+      <BlurFade delay={1.5} inView duration={0.8}>
+        <button
+          onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
+          className="group flex flex-col items-center gap-3 cursor-pointer"
+        >
+          <div className="relative w-8 h-14 rounded-full border-2 border-emerald-500/30 group-hover:border-emerald-400/60 transition-colors bg-emerald-500/5">
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-1.5 h-3 bg-emerald-400 rounded-full animate-bounce shadow-[0_0_10px_rgba(34,211,238,0.8)]" />
+            <div className="absolute inset-0 rounded-full border border-emerald-400/20 animate-ping" />
+          </div>
+          <span className="text-[10px] font-mono text-emerald-500/60 uppercase tracking-[0.2em] group-hover:text-emerald-400 transition-colors">
+            Sincronizar
+          </span>
+        </button>
+      </BlurFade>
+    </div>
+  );
+});
+
+// Sistema de Órbitas 3D - ALTAMENTE OTIMIZADO
+const OrbitalSystem = memo(function OrbitalSystem({ 
+  isTouch, 
+  isLowEnd,
+  prefersReducedMotion 
+}: { 
+  isTouch: boolean; 
+  isLowEnd: boolean;
+  prefersReducedMotion: boolean;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
-  const [time, setTime] = useState(0);
+  const timeRef = useRef(0);
+  const [, forceUpdate] = useState({});
+  
+  const { ref: inViewRef, isInView } = useInView<HTMLDivElement>({ threshold: 0.1 });
+  
+  const setRefs = useCallback((node: HTMLDivElement | null) => {
+    (containerRef as any).current = node;
+    (inViewRef as any).current = node;
+  }, [inViewRef]);
 
-  // Animação contínua do tempo
   useEffect(() => {
+    if (!isInView || isTouch || isLowEnd || prefersReducedMotion) return;
+    
     let animationId: number;
+    let frameCount = 0;
+    
     const animate = () => {
-      setTime(t => t + 0.005);
+      frameCount++;
+      if (frameCount % 2 === 0) {
+        timeRef.current += 0.01;
+        forceUpdate({});
+      }
       animationId = requestAnimationFrame(animate);
     };
+    
     animationId = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animationId);
-  }, []);
+  }, [isInView, isTouch, isLowEnd, prefersReducedMotion]);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (isTouch || !containerRef.current) return;
+  const handleMouseMove = useThrottledCallback((e: React.MouseEvent) => {
+    if (!containerRef.current || isTouch || !isInView) return;
+    
     const rect = containerRef.current.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width - 0.5) * 20;
     const y = ((e.clientY - rect.top) / rect.height - 0.5) * 20;
     setMousePos({ x, y });
-  }, [isTouch]);
+  }, [isTouch, isInView]);
 
-  // Configuração das órbitas com TECNOLOGIAS
-  const orbitals = [
-    {
-      radius: 28,
-      speed: 0.5,
-      direction: 1,
-      nodes: [
-        { id: "react", icon: TechIcons.react, color: "#61DAFB", label: "React", offset: 0 },
-        { id: "typescript", icon: TechIcons.typescript, color: "#3178C6", label: "TypeScript", offset: Math.PI },
-      ]
-    },
-    {
-      radius: 42,
-      speed: 0.3,
-      direction: -1,
-      nodes: [
-        { id: "vite", icon: TechIcons.vite, color: "#646CFF", label: "Vite", offset: 0 },
-        { id: "nodejs", icon: TechIcons.nodejs, color: "#339933", label: "Node.js", offset: Math.PI / 2 },
-        { id: "tailwind", icon: TechIcons.tailwind, color: "#06B6D4", label: "Tailwind", offset: Math.PI },
-        { id: "nextjs", icon: TechIcons.nextjs, color: "#ffffff", label: "Next.js", offset: -Math.PI / 2 },
-      ]
-    },
-    {
-      radius: 56,
-      speed: 0.2,
-      direction: 1,
-      nodes: [
-        { id: "postgresql", icon: TechIcons.postgresql, color: "#336791", label: "PostgreSQL", offset: 0 },
-        { id: "sqlite", icon: TechIcons.sqlite, color: "#003B57", label: "SQLite", offset: Math.PI },
-        { id: "prisma", icon: TechIcons.prisma, color: "#2D3748", label: "Prisma", offset: Math.PI / 2 },
-      ]
-    }
-  ];
+  const handleMouseLeave = useCallback(() => {
+    setMousePos({ x: 0, y: 0 });
+  }, []);
 
-  // Calcular posição de um nó baseado no tempo
-  const getNodePosition = (orbit: typeof orbitals[0], node: typeof orbit.nodes[0]) => {
-    const angle = time * orbit.speed * orbit.direction + node.offset;
+  if (isLowEnd || prefersReducedMotion) {
+    return (
+      <div className="relative w-full aspect-square max-w-150 mx-auto">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+          <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full bg-linear-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" />
+              <path d="M2 17l10 5 10-5" />
+              <path d="M2 12l10 5 10-5" />
+            </svg>
+          </div>
+        </div>
+        {ORBITALS_CONFIG.flatMap((orbit, oi) => 
+          orbit.nodes.map((node, ni) => {
+            const angle = (ni / orbit.nodes.length) * Math.PI * 2;
+            const x = Math.cos(angle) * orbit.radius;
+            const y = Math.sin(angle) * orbit.radius;
+            return (
+              <div
+                key={node.id}
+                className="absolute top-1/2 left-1/2 w-12 h-12 sm:w-16 sm:h-16 rounded-xl backdrop-blur-md border border-white/10 flex items-center justify-center"
+                style={{
+                  transform: `translate(calc(-50% + ${x}%), calc(-50% + ${y}%))`,
+                  backgroundColor: `${node.color}15`,
+                }}
+              >
+                {TechIconSVG[node.icon]}
+              </div>
+            );
+          })
+        )}
+      </div>
+    );
+  }
+
+  const getNodePosition = (orbit: typeof ORBITALS_CONFIG[0], node: typeof orbit.nodes[0]) => {
+    const angle = timeRef.current * orbit.speed * orbit.direction + node.offset;
     const x = Math.cos(angle) * orbit.radius;
     const y = Math.sin(angle) * orbit.radius;
     return { x, y, angle };
@@ -435,12 +552,11 @@ function OrbitalSystem({ isTouch }: { isTouch: boolean }) {
 
   return (
     <div
-      ref={containerRef}
+      ref={setRefs}
       className="relative w-full aspect-square max-w-150 mx-auto perspective-1000"
       onMouseMove={handleMouseMove}
-      onMouseLeave={() => setMousePos({ x: 0, y: 0 })}
+      onMouseLeave={handleMouseLeave}
     >
-      {/* Container 3D */}
       <div
         className="absolute inset-0 transition-transform duration-300 ease-out"
         style={{
@@ -451,12 +567,9 @@ function OrbitalSystem({ isTouch }: { isTouch: boolean }) {
         {/* Centro - Núcleo */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
           <div className="relative w-20 h-20 sm:w-28 sm:h-28">
-            {/* Anéis do núcleo */}
             <div className="absolute inset-0 rounded-full border border-emerald-500/30 animate-[spin_8s_linear_infinite]" />
             <div className="absolute inset-2 rounded-full border border-emerald-400/20 animate-[spin_12s_linear_infinite_reverse]" />
             <div className="absolute inset-4 rounded-full border border-emerald-300/10 animate-[spin_16s_linear_infinite]" />
-
-            {/* Núcleo central */}
             <div className="absolute inset-6 rounded-full bg-linear-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-[0_0_50px_rgba(16,185,129,0.6)] animate-pulse">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" className="sm:w-10 sm:h-10 drop-shadow-lg">
                 <path d="M12 2L2 7l10 5 10-5-10-5z" />
@@ -464,16 +577,13 @@ function OrbitalSystem({ isTouch }: { isTouch: boolean }) {
                 <path d="M2 12l10 5 10-5" />
               </svg>
             </div>
-
-            {/* Glow intenso */}
             <div className="absolute inset-0 rounded-full bg-emerald-500/30 blur-2xl animate-pulse" />
           </div>
         </div>
 
         {/* Órbitas e Nós */}
-        {orbitals.map((orbit, orbitIndex) => (
+        {ORBITALS_CONFIG.map((orbit, orbitIndex) => (
           <div key={orbitIndex} className="absolute inset-0 pointer-events-none">
-            {/* Círculo de órbita visível */}
             <div
               className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/5"
               style={{
@@ -482,18 +592,16 @@ function OrbitalSystem({ isTouch }: { isTouch: boolean }) {
                 boxShadow: `0 0 40px rgba(16, 185, 129, ${0.1 - orbitIndex * 0.02}), inset 0 0 40px rgba(16, 185, 129, ${0.05 - orbitIndex * 0.01})`,
               }}
             >
-              {/* Gradient stroke animado */}
               <div
                 className="absolute inset-0 rounded-full opacity-30"
                 style={{
-                  background: `conic-gradient(from ${time * 20}deg, transparent 0deg, rgba(16,185,129,0.4) 90deg, transparent 180deg, transparent 270deg, rgba(16,185,129,0.4) 360deg)`,
+                  background: `conic-gradient(from ${timeRef.current * 20}deg, transparent 0deg, rgba(16,185,129,0.4) 90deg, transparent 180deg, transparent 270deg, rgba(16,185,129,0.4) 360deg)`,
                   mask: 'radial-gradient(transparent 65%, black 66%)',
                   WebkitMask: 'radial-gradient(transparent 65%, black 66%)',
                 }}
               />
             </div>
 
-            {/* Nós ESPALHADOS pela órbita */}
             {orbit.nodes.map((node) => {
               const pos = getNodePosition(orbit, node);
               const isHovered = hoveredNode === node.id;
@@ -526,12 +634,9 @@ function OrbitalSystem({ isTouch }: { isTouch: boolean }) {
                       transform: isHovered ? 'scale(1.25) translateZ(20px)' : 'scale(1)',
                     }}
                   >
-                    {/* Ícone SVG */}
                     <div className="relative z-10 filter drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">
-                      {node.icon}
+                      {TechIconSVG[node.icon]}
                     </div>
-
-                    {/* Glow interno pulsante */}
                     <div
                       className="absolute inset-0 rounded-xl animate-pulse"
                       style={{
@@ -539,8 +644,6 @@ function OrbitalSystem({ isTouch }: { isTouch: boolean }) {
                         opacity: isHovered ? 1 : 0.5,
                       }}
                     />
-
-                    {/* Label flutuante */}
                     <div
                       className={`
                         absolute -bottom-10 left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 rounded-full 
@@ -550,14 +653,10 @@ function OrbitalSystem({ isTouch }: { isTouch: boolean }) {
                     >
                       <span style={{ color: node.color }}>{node.label}</span>
                     </div>
-
-                    {/* Linha de conexão com o centro quando hover */}
                     {isHovered && (
                       <svg
                         className="absolute top-1/2 left-1/2 w-50 h-50 pointer-events-none -z-10"
-                        style={{
-                          transform: 'translate(-50%, -50%)',
-                        }}
+                        style={{ transform: 'translate(-50%, -50%)' }}
                       >
                         <line
                           x1="50%"
@@ -572,8 +671,6 @@ function OrbitalSystem({ isTouch }: { isTouch: boolean }) {
                       </svg>
                     )}
                   </div>
-
-                  {/* Rastro do nó (cauda) */}
                   <div
                     className="absolute top-1/2 left-1/2 h-0.5 bg-linear-to-r from-transparent to-emerald-400/30 -z-10"
                     style={{
@@ -589,54 +686,66 @@ function OrbitalSystem({ isTouch }: { isTouch: boolean }) {
         ))}
 
         {/* Partículas de fundo */}
-        {[...Array(15)].map((_, i) => (
+        {PARTICLES.map((particle) => (
           <div
-            key={i}
-            className="absolute w-1 h-1 bg-emerald-400 rounded-full animate-pulse pointer-events-none"
+            key={particle.id}
+            className="absolute rounded-full animate-pulse pointer-events-none"
             style={{
-              top: `${20 + Math.random() * 60}%`,
-              left: `${20 + Math.random() * 60}%`,
-              animationDuration: `${2 + Math.random() * 3}s`,
-              animationDelay: `${Math.random() * 2}s`,
-              opacity: 0.2 + Math.random() * 0.4,
-              boxShadow: `0 0 ${4 + Math.random() * 4}px #10b981`,
+              top: `${particle.top}%`,
+              left: `${particle.left}%`,
+              width: `${particle.size}px`,
+              height: `${particle.size}px`,
+              animationDuration: `${particle.duration}s`,
+              animationDelay: `${particle.delay}s`,
+              opacity: particle.opacity,
+              backgroundColor: '#10b981',
+              boxShadow: `0 0 ${4 + particle.size}px #10b981`,
             }}
           />
         ))}
       </div>
 
-      {/* Reflexo no chão */}
       <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-2/3 h-16 bg-emerald-500/20 blur-3xl rounded-full transform rotateX(60deg)" />
     </div>
   );
-}
+});
+
+// ============================================
+// COMPONENTE PRINCIPAL
+// ============================================
 
 export function Hero() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [scrollY, setScrollY] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isTouch, setIsTouch] = useState(false);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const heroRef = useRef<HTMLElement>(null);
+  
+  const { isLowEnd, prefersReducedMotion } = useDeviceCapabilities();
 
   useEffect(() => {
     setIsTouch('ontouchstart' in window || navigator.maxTouchPoints > 0);
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setPrefersReducedMotion(mediaQuery.matches);
+  }, []);
 
-    const handleMouseMove = (e: MouseEvent) => {
-      if (isTouch) return;
-      setMousePosition({
-        x: (e.clientX / window.innerWidth - 0.5) * 20,
-        y: (e.clientY / window.innerHeight - 0.5) * 20,
-      });
-    };
+  const handleMouseMove = useThrottledCallback((e: MouseEvent) => {
+    if (isTouch || prefersReducedMotion) return;
+    setMousePosition({
+      x: (e.clientX / window.innerWidth - 0.5) * 20,
+      y: (e.clientY / window.innerHeight - 0.5) * 20,
+    });
+  }, [isTouch, prefersReducedMotion]);
 
+  useEffect(() => {
+    let rafId: number;
+    
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      setScrollY(currentScrollY);
-      setIsScrolled(currentScrollY > 50);
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const currentScrollY = window.scrollY;
+        setScrollY(currentScrollY);
+        setIsScrolled(currentScrollY > 50);
+      });
     };
 
     window.addEventListener("mousemove", handleMouseMove, { passive: true });
@@ -645,14 +754,19 @@ export function Hero() {
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("scroll", handleScroll);
+      cancelAnimationFrame(rafId);
     };
-  }, [isTouch]);
+  }, [handleMouseMove]);
 
-  const stats = [
+  const stats = useMemo(() => [
     { value: 200, suffix: "+", label: "Negócios", sublabel: "Digitalizados" },
     { value: 0, suffix: "", label: "Dor de Cabeça", sublabel: "Com Técnico" },
     { value: 4.9, suffix: "", label: "Satisfação", sublabel: "Dos Clientes" },
-  ];
+  ], []);
+
+  const darkVeilFallback = (
+    <div className="absolute inset-0 bg-[#0a0a0a] animate-pulse" />
+  );
 
   return (
     <section ref={heroRef} className="relative min-h-dvh overflow-hidden bg-[#0a0a0a] selection:bg-emerald-500/30 selection:text-emerald-400">
@@ -663,15 +777,17 @@ export function Hero() {
           transform: prefersReducedMotion ? 'none' : `translate(${mousePosition.x * 0.1}px, ${mousePosition.y * 0.1}px) scale(1.1)`,
         }}
       >
-        <DarkVeil
-          hueShift={158}
-          noiseIntensity={0.02}
-          scanlineIntensity={0.04}
-          speed={0.25}
-          scanlineFrequency={400}
-          warpAmount={0.005}
-          resolutionScale={1}
-        />
+        <Suspense fallback={darkVeilFallback}>
+          <DarkVeil
+            hueShift={158}
+            noiseIntensity={0.02}
+            scanlineIntensity={0.04}
+            speed={0.25}
+            scanlineFrequency={400}
+            warpAmount={0.005}
+            resolutionScale={isLowEnd ? 0.5 : 1}
+          />
+        </Suspense>
       </div>
 
       {/* Grid sutil */}
@@ -691,7 +807,7 @@ export function Hero() {
       {/* Orbes de luz */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <div
-          className="absolute w-[30vw] h-[30vw] min-w-37.5 min-h-37.5 max-w-100 max-h-100 rounded-full bg-emerald-500/20 blur-3xl animate-pulse"
+          className={`absolute w-[30vw] h-[30vw] min-w-37.5 min-h-37.5 max-w-100 max-h-100 rounded-full bg-emerald-500/20 blur-3xl ${isLowEnd ? '' : 'animate-pulse'}`}
           style={{
             top: '5%',
             left: '5%',
@@ -699,25 +815,24 @@ export function Hero() {
             animationDuration: '4s',
           }}
         />
-        <div
-          className="absolute w-[25vw] h-[25vw] min-w-30 min-h-30 max-w-87.5 max-h-87.5 rounded-full bg-teal-500/15 blur-3xl animate-pulse"
-          style={{
-            bottom: '15%',
-            right: '10%',
-            transform: prefersReducedMotion ? 'none' : `translate(${-mousePosition.x * 1.2}px, ${-mousePosition.y * 1.2}px)`,
-            animationDuration: '6s',
-            animationDelay: '1s',
-          }}
-        />
+        {!isLowEnd && (
+          <div
+            className="absolute w-[25vw] h-[25vw] min-w-30 min-h-30 max-w-87.5 max-h-87.5 rounded-full bg-teal-500/15 blur-3xl animate-pulse"
+            style={{
+              bottom: '15%',
+              right: '10%',
+              transform: prefersReducedMotion ? 'none' : `translate(${-mousePosition.x * 1.2}px, ${-mousePosition.y * 1.2}px)`,
+              animationDuration: '6s',
+              animationDelay: '1s',
+            }}
+          />
+        )}
       </div>
 
-      {/* ============================================
-          NAVBAR DESTACADO - VERSÃO ALTO CONTRASTE
-          ============================================ */}
+      {/* NAVBAR */}
       <nav className="absolute top-0 left-0 right-0 z-50 px-4 pt-4 sm:pt-6 transition-all duration-700">
         <BlurFade delay={0} direction="down" duration={0.8}>
           <div className="mx-auto max-w-6xl">
-            {/* Container com efeito de elevação e borda luminosa */}
             <div
               className={`
                 relative flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 rounded-2xl
@@ -725,14 +840,10 @@ export function Hero() {
                 ${isScrolled ? 'mt-2' : 'mt-0'}
               `}
               style={{
-                // Fundo escuro sólido com transparência controlada
                 background: 'rgba(10, 10, 10, 0.85)',
-                // Blur moderado para manter legibilidade
                 backdropFilter: 'blur(12px) saturate(150%)',
                 WebkitBackdropFilter: 'blur(12px) saturate(150%)',
-                // BORDA LUMINOSA - destaque principal
                 border: '1px solid rgba(16, 185, 129, 0.3)',
-                // Sombra de elevação intensa
                 boxShadow: `
                   0 20px 50px -12px rgba(0, 0, 0, 0.8),
                   0 0 0 1px rgba(16, 185, 129, 0.1),
@@ -741,7 +852,6 @@ export function Hero() {
                 `,
               }}
             >
-              {/* Glow de borda animado */}
               <div
                 className="absolute -inset-px rounded-2xl opacity-50 pointer-events-none"
                 style={{
@@ -752,8 +862,6 @@ export function Hero() {
                   padding: '1px',
                 }}
               />
-
-              {/* Linha de brilho superior */}
               <div
                 className="absolute top-0 left-8 right-8 h-px pointer-events-none"
                 style={{
@@ -761,7 +869,7 @@ export function Hero() {
                 }}
               />
 
-              {/* Logo com destaque */}
+              {/* Logo */}
               <div className="flex items-center gap-2 sm:gap-3 group cursor-pointer relative z-10">
                 <div
                   className="relative h-8 w-8 sm:h-10 sm:w-10 rounded-xl flex items-center justify-center transition-all duration-500 group-hover:scale-110"
@@ -775,37 +883,28 @@ export function Hero() {
                     <path d="M2 17l10 5 10-5" />
                     <path d="M2 12l10 5 10-5" />
                   </svg>
-                  {/* Glow do logo */}
                   <div className="absolute inset-0 rounded-xl bg-emerald-400/50 blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 </div>
-                <span
-                  className="text-lg sm:text-xl font-bold tracking-tight text-white drop-shadow-[0_0_10px_rgba(16,185,129,0.3)]"
-                >
+                <span className="text-lg sm:text-xl font-bold tracking-tight text-white drop-shadow-[0_0_10px_rgba(16,185,129,0.3)]">
                   NexHub
                 </span>
               </div>
 
-              {/* Links de navegação - MAIS VISÍVEIS */}
+              {/* Links de navegação */}
               <div className="hidden md:flex items-center gap-1 relative z-10">
-                {["Como Funciona", "Serviços", "Preços", "Contato"].map((item, _index) => (
+                {["Como Funciona", "Serviços", "Preços", "Contato"].map((item) => (
                   <a
                     key={item}
                     href={`#${item.toLowerCase().replace(' ', '-')}`}
                     className="relative px-4 py-2 text-sm font-medium transition-all duration-300 group"
                   >
-                    {/* Fundo do hover */}
                     <span
                       className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300"
-                      style={{
-                        background: 'rgba(16, 185, 129, 0.1)',
-                      }}
+                      style={{ background: 'rgba(16, 185, 129, 0.1)' }}
                     />
-
                     <span className="relative z-10 text-white/70 group-hover:text-emerald-400 transition-colors duration-300 drop-shadow-sm">
                       {item}
                     </span>
-
-                    {/* Indicador de foco mais visível */}
                     <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.8)] group-hover:w-2/3 transition-all duration-300 rounded-full" />
                   </a>
                 ))}
@@ -826,25 +925,22 @@ export function Hero() {
                 </button>
               </div>
 
-              {/* CTA Button - DESTACADO */}
-              <div className="hidden md:block relative z-10 ">
+              {/* CTA Button */}
+              <div className="hidden md:block relative z-10">
                 <LightSweep className="rounded-xl">
                   <a
                     href="#pricing"
                     className="relative inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-black transition-all duration-300 rounded-xl overflow-hidden group"
                     style={{
                       background: 'linear-gradient(135deg, #34d399 0%, #10b981 100%)',
-                      boxShadow: '0 4px 20px rgba(16,185,129,0.4), inset 0 1px 0 rgba(255,255,255,0.4), 0 0 0 1px rgba(16,185,129,0.5',
+                      boxShadow: '0 4px 20px rgba(16,185,129,0.4), inset 0 1px 0 rgba(255,255,255,0.4), 0 0 0 1px rgba(16,185,129,0.5)',
                     }}
                   >
-                    {/* Brilho interno */}
-                    <span className="absolute inset-0 rounded-xl bg-linear-to-b from-white/40 to-transparent opacity-100 " />
-                    {/* Glow no hover */}
-                    <span className="absolute inset-0 rounded-xl bg-emerald-400/0 group-hover:bg-emerald-400/30 transition-colors duration-300 " />
-
-                    <span className="relative z-10 flex items-center gap-2 font-bold  ">
+                    <span className="absolute inset-0 rounded-xl bg-linear-to-b from-white/40 to-transparent opacity-100" />
+                    <span className="absolute inset-0 rounded-xl bg-emerald-400/0 group-hover:bg-emerald-400/30 transition-colors duration-300" />
+                    <span className="relative z-10 flex items-center gap-2 font-bold">
                       Começar Agora
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="transition-transform duration-300 group-hover:translate-x-1 ">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="transition-transform duration-300 group-hover:translate-x-1">
                         <path d="M5 12h14" />
                         <path d="m12 5 7 7-7 7" />
                       </svg>
@@ -905,7 +1001,7 @@ export function Hero() {
 
             <BlurFade delay={1.0} inView duration={0.8}>
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                <FloatingCard intensity={isTouch ? 0 : 15} className="w-full sm:w-auto">
+                <FloatingCard intensity={isTouch ? 0 : 15} className="w-full sm:w-auto" disabled={isTouch}>
                   <ShimmerButton
                     className="w-full sm:w-auto h-12 sm:h-14 px-6 sm:px-8 text-sm sm:text-base font-semibold rounded-xl active:scale-95 transition-transform"
                     shimmerColor="#ffffff"
@@ -923,7 +1019,7 @@ export function Hero() {
                   </ShimmerButton>
                 </FloatingCard>
 
-                <FloatingCard intensity={isTouch ? 0 : 15} delay={100} className="w-full sm:w-auto">
+                <FloatingCard intensity={isTouch ? 0 : 15} delay={100} className="w-full sm:w-auto" disabled={isTouch}>
                   <a
                     href="#showcase"
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-12 sm:h-14 px-6 sm:px-8 rounded-xl border border-white/10 bg-white/5 text-white font-semibold transition-all duration-300 hover:bg-white/10 hover:border-white/20 active:scale-95 backdrop-blur-sm group text-sm sm:text-base"
@@ -941,7 +1037,12 @@ export function Hero() {
             <BlurFade delay={1.2} inView duration={0.8}>
               <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-6 sm:pt-4">
                 {stats.map((stat, i) => (
-                  <FloatingCard key={stat.label} delay={i * 100} intensity={isTouch ? 0 : 10}>
+                  <FloatingCard 
+                    key={stat.label} 
+                    delay={i * 100} 
+                    intensity={isTouch ? 0 : 10} 
+                    disabled={isTouch}
+                  >
                     <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-black/40 border border-emerald-400/20 backdrop-blur-sm hover:bg-cyan-500/5 hover:border-emerald-400/40 active:scale-95 transition-all duration-500 group cursor-pointer touch-manipulation relative overflow-hidden">
                       <div className="absolute top-0 right-0 w-8 h-8 bg-linear-to-bl from-emerald-400/20 to-transparent rounded-bl-full" />
                       <div className="text-[clamp(1.25rem,4vw,2rem)] font-bold text-white mb-0.5 sm:mb-1 group-hover:text-emerald-400 transition-colors">
@@ -964,7 +1065,11 @@ export function Hero() {
           {/* Coluna Direita - Sistema de Órbitas */}
           <div className="order-1 lg:order-2 relative mt-2 sm:mt-0">
             <BlurFade delay={0.4} inView duration={1}>
-              <OrbitalSystem isTouch={isTouch} />
+              <OrbitalSystem 
+                isTouch={isTouch} 
+                isLowEnd={isLowEnd}
+                prefersReducedMotion={prefersReducedMotion}
+              />
             </BlurFade>
           </div>
         </div>
