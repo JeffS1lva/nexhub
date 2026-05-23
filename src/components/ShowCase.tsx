@@ -1,85 +1,84 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import GestaoLogistic from "./assets/GestaoLogistc.png"
+import PortalNexion from "./assets/Nexxion.png"
+import PlatCoffe from "./assets/CoffePlat.png"
 
 const projects = [
   {
-    title: "Analytics Pro",
-    category: "SaaS Dashboard",
-    client: "TechFlow Solutions",
-    description: "Dashboard analítico enterprise com visualização de dados em tempo real, gráficos interativos e relatórios automatizados.",
-    image: "https://cdn.dribbble.com/userupload/3998167/file/original-c52969b26fc071b11dcac7b2bd399bfa.png?format=webp&resize=2400x1600",
-    demoUrl: "https://analytics-dashboard-demo.vercel.app",
-    tags: ["Next.js", "D3.js", "PostgreSQL", "Tailwind"],
-    year: "2025",
-    metrics: { conversion: "+340%", speed: "98/100", users: "50K+" },
-    accent: "#10b981",
-    duration: 6000,
+    title: "Nexion Hub Transport",
+    category: "Sistema de Gestão Logística",
+    client: "Nexion Logistics",
+    description:
+      "Plataforma de gestão logística com dashboards analíticos de pagamentos e entregas, cadastro de motoristas e veículos, fechamento automatizado de pagamentos e controle de acesso com níveis administrador, editor e visualizador.",
+    image: GestaoLogistic,
+    demoUrl: "https://nexion-hubtransportadora.vercel.app/",
+    tags: [
+      "Next.js",
+      "TypeScript",
+      "TailwindCSS",
+      "Dashboard",
+      "Logística",
+      "SaaS",
+    ],
+    year: "2026",
+    metrics: {
+      conversion: "+320%",
+      speed: "99/100",
+    },
+    accent: "#059669",
+    duration: 7000,
   },
   {
-    title: "Luxe Commerce",
-    category: "E-Commerce Platform",
-    client: "Luxe Brands Co",
-    description: "Plataforma de e-commerce premium com checkout inteligente, recomendações por IA e gestão de inventário em tempo real.",
-    image: "https://pixel77.com/wp-content/uploads/2024/06/ecommerce-website-designs-1-1024x768.webp",
-    demoUrl: "https://luxe-commerce-demo.vercel.app",
-    tags: ["React", "Node.js", "Stripe", "Prisma"],
-    year: "2025",
-    metrics: { conversion: "+280%", speed: "99/100", users: "12K+" },
+    title: "Portal Nexion",
+    category: "Portal Empresarial",
+    client: "Nexion",
+    description:
+      "Portal integrado ao SAP para gestão de pedidos, boletos e rastreamento de entregas em tempo real, com dashboards analíticos, autenticação segura e automação de processos.",
+    image: PortalNexion,
+    demoUrl: "https://portal-nexion.vercel.app/login",
+    tags: [
+      "React",
+      "TypeScript",
+      "TailwindCSS",
+      "SAP Integration",
+      "Dashboard",
+      "ERP",
+    ],
+    year: "2026",
+    metrics: {
+      conversion: "+280%",
+      speed: "99/100",
+      users: "5K+",
+    },
     accent: "#3b82f6",
     duration: 7000,
   },
   {
-    title: "Weld Finance",
-    category: "Fintech Platform",
-    client: "Weld Bank",
-    description: "Aplicação bancária completa com gestão de cartões, investimentos, transferências instantâneas e análise de gastos.",
-    image: "https://qubstudio.com/wp-content/uploads/2023/04/Weld.jpg",
-    demoUrl: "https://weld-finance-demo.vercel.app",
-    tags: ["TypeScript", "Plaid API", "MongoDB", "Express"],
-    year: "2024",
-    metrics: { conversion: "+420%", speed: "97/100", users: "25K+" },
+    title: "CaféLux",
+    category: "Cafeteria Premium",
+    client: "Plat Coffe",
+    description:
+      "Plataforma moderna para cafeterias com catálogo digital, pedidos online, gestão de produtos e experiência visual premium focada em performance e conversão.",
+    image: PlatCoffe,
+    demoUrl: "https://plat-coffe.vercel.app/",
+    tags: [
+      "React",
+      "TypeScript",
+      "TailwindCSS",
+      "UI/UX",
+      "E-Commerce",
+      "Vite",
+    ],
+    year: "2026",
+    metrics: {
+      conversion: "+420%",
+      speed: "97/100",
+      users: "25K+",
+    },
     accent: "#f59e0b",
     duration: 6500,
-  },
-  {
-    title: "Elyse Properties",
-    category: "Proptech Platform",
-    client: "Elyse Real Estate",
-    description: "Plataforma imobiliária com tours virtuais 3D, mapas interativos, busca inteligente e agendamento automatizado.",
-    image: "https://cdn.dribbble.com/userupload/19564469/file/original-fd6fb3b9ef09eeba7004324951163af4.png?format=webp&resize=2400x1600",
-    demoUrl: "https://elyse-properties-demo.vercel.app",
-    tags: ["Three.js", "Maps API", "Next.js", "Supabase"],
-    year: "2024",
-    metrics: { conversion: "+560%", speed: "100/100", users: "8K+" },
-    accent: "#8b5cf6",
-    duration: 8000,
-  },
-  {
-    title: "MedConnect",
-    category: "Health Platform",
-    client: "Vitalis Health",
-    description: "Sistema de telemedicina com consultas online, prontuário digital, integração com wearables e IA para diagnósticos.",
-    image: "https://cdn.dribbble.com/userupload/37443735/file/original-95234d7802d1aec5d60aed5c64a8a89e.png?format=webp&resize=2400x1600",
-    demoUrl: "https://medconnect-demo.vercel.app",
-    tags: ["React Native", "WebRTC", "TensorFlow", "AWS"],
-    year: "2024",
-    metrics: { conversion: "+190%", speed: "96/100", users: "35K+" },
-    accent: "#06b6d4",
-    duration: 5500,
-  },
-  {
-    title: "TaskFlow AI",
-    category: "Productivity SaaS",
-    client: "Productive Labs",
-    description: "Gerenciamento de projetos com automação por IA, integração com múltiplas ferramentas e análise preditiva de prazos.",
-    image: "https://cdn.dribbble.com/userupload/42641803/file/still-84645395eb82f6cd53686cf089879b5b.png?resize=2400x1600",
-    demoUrl: "https://taskflow-ai-demo.vercel.app",
-    tags: ["Vue.js", "GraphQL", "OpenAI", "Docker"],
-    year: "2024",
-    metrics: { conversion: "+310%", speed: "98/100", users: "18K+" },
-    accent: "#ec4899",
-    duration: 6000,
   },
 ];
 
@@ -89,38 +88,38 @@ const easeInOutCubic = (t: number) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 
 
 export function Showcase() {
   const [activeIndex, setActiveIndex] = useState(0);
-  
+
   // Refs para animação fluida sem re-renders
   const progressRef = useRef(0);
   const slideProgressRef = useRef<HTMLDivElement>(null);
   const slidesRef = useRef<(HTMLDivElement | null)[]>([]);
   const rafRef = useRef<number | null>(null);
   const lastTimeRef = useRef(0);
-  
+
   const currentProject = projects[activeIndex];
 
   // Animação principal - 60fps pura
   useEffect(() => {
     const duration = currentProject.duration;
-    
+
     const animate = (time: number) => {
       if (!lastTimeRef.current) lastTimeRef.current = time;
-      
+
       const delta = time - lastTimeRef.current;
       lastTimeRef.current = time;
-      
+
       // Atualizar progresso
       progressRef.current += delta / duration;
-      
+
       if (progressRef.current >= 1) {
         // Transição para próximo slide
         progressRef.current = 0;
         setActiveIndex((prev) => (prev + 1) % projects.length);
       }
-      
+
       // Aplicar transformações diretamente via DOM - sem re-render!
       const easedProgress = easeOutCubic(progressRef.current);
-      
+
       // Atualizar barra de progresso circular
       if (slideProgressRef.current) {
         const circle = slideProgressRef.current.querySelector('circle:last-child') as SVGCircleElement;
@@ -128,25 +127,25 @@ export function Showcase() {
           circle.setAttribute('stroke-dasharray', `${easedProgress * 100}, 100`);
         }
       }
-      
+
       // Atualizar slides
       slidesRef.current.forEach((slide, index) => {
         if (!slide) return;
-        
+
         const diff = index - activeIndex;
         const normalizedDiff = ((diff % projects.length) + projects.length) % projects.length;
         const adjustedDiff = normalizedDiff > projects.length / 2 ? normalizedDiff - projects.length : normalizedDiff;
-        
+
         const isActive = index === activeIndex;
         const isEntering = adjustedDiff === 0 && progressRef.current < 0.2;
         const isExiting = adjustedDiff === 0 && progressRef.current > 0.8;
-        
+
         // Calcular posição
         let x = adjustedDiff * 100;
         let scale = 1 - Math.abs(adjustedDiff) * 0.15;
         let opacity = 1 - Math.abs(adjustedDiff) * 0.6;
         let blur = Math.abs(adjustedDiff) * 8;
-        
+
         if (isActive) {
           if (isEntering) {
             const enterProgress = progressRef.current / 0.2;
@@ -160,51 +159,51 @@ export function Showcase() {
             x = -30 * easeInOutCubic(exitProgress);
           }
         }
-        
+
         // Aplicar transformações diretamente
         const clampedOpacity = Math.max(0.1, Math.min(1, opacity));
         const clampedScale = Math.max(0.6, scale);
-        
+
         slide.style.transform = `translateX(${x}%) scale(${clampedScale})`;
         slide.style.opacity = String(clampedOpacity);
         slide.style.filter = `blur(${blur}px)`;
         slide.style.zIndex = String(10 - Math.abs(adjustedDiff));
-        
+
         // Atualizar conteúdo interno se ativo
         if (isActive) {
           const content = slide.querySelector('.slide-content') as HTMLElement;
           const image = slide.querySelector('img') as HTMLImageElement;
-          
+
           if (image) {
             const kenBurnsX = Math.sin(progressRef.current * Math.PI * 2) * 10;
             const kenBurnsY = Math.cos(progressRef.current * Math.PI * 2) * 10;
             const kenBurnsScale = 1 + progressRef.current * 0.05;
             image.style.transform = `scale(${kenBurnsScale}) translate(${kenBurnsX}px, ${kenBurnsY}px)`;
           }
-          
+
           if (content) {
             const title = content.querySelector('.slide-title') as HTMLElement;
             const desc = content.querySelector('.slide-desc') as HTMLElement;
             const tags = content.querySelector('.slide-tags') as HTMLElement;
             const metrics = content.querySelectorAll('.slide-metric') as NodeListOf<HTMLElement>;
             const demoBtn = content.querySelector('.demo-button') as HTMLElement;
-            
+
             if (title) {
-              const titleProgress = progressRef.current < 0.15 
+              const titleProgress = progressRef.current < 0.15
                 ? easeOutCubic(progressRef.current / 0.15)
                 : 1;
               title.style.transform = `translateY(${(1 - titleProgress) * 100}%)`;
               title.style.opacity = String(titleProgress);
             }
-            
+
             if (desc) {
-              const descProgress = progressRef.current < 0.2 
+              const descProgress = progressRef.current < 0.2
                 ? easeOutCubic(progressRef.current / 0.2)
                 : 1;
               desc.style.opacity = String(descProgress);
               desc.style.transform = `translateY(${(1 - descProgress) * 20}px)`;
             }
-            
+
             if (tags) {
               const tagsOpacity = progressRef.current > 0.15 ? 1 : 0;
               tags.style.opacity = String(tagsOpacity);
@@ -216,7 +215,7 @@ export function Showcase() {
               demoBtn.style.opacity = String(btnProgress);
               demoBtn.style.transform = `translateY(${btnProgress ? 0 : 20}px)`;
             }
-            
+
             metrics.forEach((metric, i) => {
               const metricProgress = progressRef.current > (0.25 + i * 0.05) ? 1 : 0;
               metric.style.opacity = String(metricProgress);
@@ -225,12 +224,12 @@ export function Showcase() {
           }
         }
       });
-      
+
       rafRef.current = requestAnimationFrame(animate);
     };
-    
+
     rafRef.current = requestAnimationFrame(animate);
-    
+
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
@@ -257,12 +256,12 @@ export function Showcase() {
   };
 
   return (
-    <section
+    <section id="showcase"
       className="relative h-screen w-full overflow-hidden bg-[#030303]"
     >
       {/* Background dinâmico */}
       <div className="absolute inset-0 pointer-events-none">
-        <div 
+        <div
           className="absolute inset-0 transition-colors duration-1000"
           style={{
             background: `
@@ -271,8 +270,8 @@ export function Showcase() {
             `,
           }}
         />
-        
-        <div 
+
+        <div
           className="absolute inset-0 opacity-[0.02]"
           style={{
             backgroundImage: `
@@ -304,7 +303,7 @@ export function Showcase() {
         <div className="relative w-full h-full flex items-center justify-center">
           {projects.map((project, index) => {
             const isActive = index === activeIndex;
-            
+
             return (
               <div
                 key={project.title}
@@ -315,11 +314,11 @@ export function Showcase() {
                   opacity: 0,
                 }}
               >
-                <div 
+                <div
                   className="relative w-full h-full rounded-3xl overflow-hidden"
                   style={{
                     background: "rgba(10, 10, 10, 0.9)",
-                    boxShadow: isActive 
+                    boxShadow: isActive
                       ? `0 50px 100px -20px ${project.accent}30, 0 30px 60px -30px rgba(0,0,0,0.8)`
                       : "0 25px 50px -12px rgba(0,0,0,0.5)",
                     border: `1px solid ${isActive ? project.accent + "40" : "rgba(255,255,255,0.1)"}`,
@@ -336,11 +335,11 @@ export function Showcase() {
                         filter: isActive ? "brightness(1)" : "brightness(0.6)",
                       }}
                     />
-                    
+
                     <div className="absolute inset-0 bg-linear-to-r from-black/80 via-black/40 to-transparent" />
                     <div className="absolute inset-0 bg-linear-to-t from-black/90 via-transparent to-black/20" />
-                    
-                    <div 
+
+                    <div
                       className="absolute inset-0 mix-blend-overlay"
                       style={{
                         background: `radial-gradient(circle at 30% 50%, ${project.accent} 0%, transparent 60%)`,
@@ -353,7 +352,7 @@ export function Showcase() {
                   <div className="slide-content absolute inset-0 p-8 md:p-12 lg:p-16 flex flex-col justify-between">
                     <div className="flex justify-between items-start">
                       <div className="flex items-center gap-4">
-                        <span 
+                        <span
                           className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider"
                           style={{
                             background: `${project.accent}20`,
@@ -368,7 +367,7 @@ export function Showcase() {
                           {project.year}
                         </span>
                       </div>
-                      
+
                       <div className="text-right">
                         <div className="text-white/60 text-sm font-medium">{project.client}</div>
                       </div>
@@ -376,7 +375,7 @@ export function Showcase() {
 
                     <div className="max-w-2xl">
                       <div className="overflow-hidden mb-4">
-                        <h2 
+                        <h2
                           className="slide-title text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white will-change-transform"
                           style={{
                             textShadow: `0 0 80px ${project.accent}40`,
@@ -388,7 +387,7 @@ export function Showcase() {
                         </h2>
                       </div>
 
-                      <p 
+                      <p
                         className="slide-desc text-lg md:text-xl text-white/70 leading-relaxed mb-6 will-change-transform"
                         style={{
                           opacity: 0,
@@ -398,7 +397,7 @@ export function Showcase() {
                         {project.description}
                       </p>
 
-                      <div 
+                      <div
                         className="slide-tags flex flex-wrap gap-2 mb-8 will-change-transform"
                         style={{
                           opacity: 0,
@@ -406,7 +405,7 @@ export function Showcase() {
                         }}
                       >
                         {project.tags.map((tag) => (
-                          <span 
+                          <span
                             key={tag}
                             className="px-3 py-1.5 rounded-lg text-xs text-white/60 bg-white/5 border border-white/10 backdrop-blur-sm"
                           >
@@ -433,7 +432,7 @@ export function Showcase() {
                           </svg>
                           Ver Demo ao Vivo
                         </span>
-                        <div 
+                        <div
                           className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                           style={{
                             background: `linear-gradient(135deg, ${project.accent}dd 0%, ${project.accent} 100%)`,
@@ -444,7 +443,7 @@ export function Showcase() {
 
                       <div className="flex gap-8 md:gap-12 mt-8">
                         {Object.entries(project.metrics).map(([key, value], _i) => (
-                          <div 
+                          <div
                             key={key}
                             className="slide-metric relative will-change-transform"
                             style={{
@@ -452,7 +451,7 @@ export function Showcase() {
                               transform: "translateY(20px)",
                             }}
                           >
-                            <div 
+                            <div
                               className="text-2xl md:text-3xl font-bold mb-1"
                               style={{ color: project.accent }}
                             >
@@ -461,9 +460,9 @@ export function Showcase() {
                             <div className="text-[10px] uppercase tracking-wider text-white/40">
                               {key === "conversion" ? "Conversão" : key === "speed" ? "Performance" : "Base de Usuários"}
                             </div>
-                            
+
                             <div className="absolute -bottom-2 left-0 w-full h-0.5 bg-white/10 rounded-full overflow-hidden">
-                              <div 
+                              <div
                                 className="metric-bar h-full rounded-full will-change-transform"
                                 style={{
                                   background: project.accent,
@@ -477,7 +476,7 @@ export function Showcase() {
                       </div>
                     </div>
 
-                    <div 
+                    <div
                       className="absolute bottom-8 right-8 text-[150px] md:text-[200px] font-bold leading-none select-none pointer-events-none"
                       style={{
                         color: "transparent",
@@ -491,7 +490,7 @@ export function Showcase() {
 
                   {/* Borda luminosa */}
                   {isActive && (
-                    <div 
+                    <div
                       className="absolute inset-0 rounded-3xl pointer-events-none"
                       style={{
                         background: `linear-gradient(90deg, transparent, ${project.accent}40, transparent)`,
@@ -559,7 +558,7 @@ export function Showcase() {
                 <path d="M15 18l-6-6 6-6" />
               </svg>
             </button>
-            
+
             <div className="flex gap-2">
               {projects.map((project, index) => (
                 <button
@@ -571,7 +570,7 @@ export function Showcase() {
                     background: "rgba(255,255,255,0.1)",
                   }}
                 >
-                  <div 
+                  <div
                     className="absolute inset-0 rounded-full transition-all duration-300"
                     style={{
                       background: project.accent,
@@ -604,14 +603,14 @@ export function Showcase() {
       </div>
 
       <div className="absolute right-8 top-1/2 -translate-y-1/2 h-64 w-px bg-white/10 hidden lg:block">
-        <div 
+        <div
           className="w-full transition-all duration-300"
           style={{
             height: `${((activeIndex + progressRef.current) / projects.length) * 100}%`,
             background: `linear-gradient(to bottom, ${currentProject.accent}, transparent)`,
           }}
         />
-        
+
         {projects.map((_, index) => (
           <div
             key={index}
