@@ -37,7 +37,7 @@ const projects = [
     description:
       "Portal integrado ao SAP para gestão de pedidos, boletos e rastreamento de entregas em tempo real, com dashboards analíticos, autenticação segura e automação de processos.",
     image: PortalNexion,
-    demoUrl: "https://portal-nexion.vercel.app/login",
+    demoUrl: "https://portal-nexion.vercel.app//login",
     tags: [
       "React",
       "TypeScript",
